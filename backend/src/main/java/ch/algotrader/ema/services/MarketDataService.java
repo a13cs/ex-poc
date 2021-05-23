@@ -3,6 +3,9 @@ package ch.algotrader.ema.services;
 import ch.algotrader.ema.strategy.StrategyLogic;
 import ch.algotrader.ema.vo.Subscription;
 import ch.algotrader.ema.vo.TradeEvent;
+import com.binance.api.client.BinanceApiClientFactory;
+import com.binance.api.client.BinanceApiWebSocketClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
@@ -86,7 +89,19 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        this.session = initSession();
+//        this.session = initSession();
+
+//        BinanceApiClientFactory factory = BinanceApiClientFactory.newInstance("API-KEY", "SECRET");
+        BinanceApiWebSocketClient client = BinanceApiClientFactory.newInstance().newWebSocketClient();
+        client.onAggTradeEvent("bncusdt",aggTradeEvent -> {
+            try {
+                // todo
+                String msg = new ObjectMapper().writeValueAsString(aggTradeEvent);
+                onMessage(null, msg);
+            } catch (JsonProcessingException e) {
+                // log
+            }
+        });
     }
 
     private Session initSession() {
