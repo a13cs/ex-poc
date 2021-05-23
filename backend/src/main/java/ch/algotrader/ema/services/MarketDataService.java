@@ -109,6 +109,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
                 strategyLogic.handleTradeEvent(tradeEvent);
             } else if (map.get("result") != null) {
                 // pb
+                LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}",ChannelSubscription.trades(topic), msg);
             }
         } catch (JsonProcessingException jpe) {
             // ignore
