@@ -25,6 +25,6 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        marketDataService.subscribeTrades("BTCUSD");
+        marketDataService.subscribeTrades("btcusdt");
     }
 }

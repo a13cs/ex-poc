@@ -1,7 +1,7 @@
 package ch.algotrader.ema.strategy;
 
+import ch.algotrader.ema.ws.model.AggTradeEvent;
 import ch.algotrader.ema.services.TradingService;
-import ch.algotrader.ema.vo.TradeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -55,11 +55,11 @@ public class StrategyLogic implements InitializingBean {
         this.emaDifference = new DifferenceIndicator(emaShort, emaLong);
     }
 
-    public void handleTradeEvent(TradeEvent event) {
+    public void handleTradeEvent(AggTradeEvent event) {
 
         if (this.series.getEndIndex() >= 0) {
             synchronized (series) {
-                series.addTrade(Math.abs(event.getAmount()), event.getPrice());
+                series.addTrade(String.valueOf(Math.abs(Integer.parseInt(event.getQuantity()))), event.getPrice());
             }
         }
     }
@@ -132,11 +132,11 @@ public class StrategyLogic implements InitializingBean {
             if(s.shouldEnter(i)) {
                 // buy
                 logger.info("!!!!!!!! BUY !!!!!!!!!)");
-                tradingService.sendOrder("buy", quantity, symbol);
+//                tradingService.sendOrder("buy", quantity, symbol);
             } else if(s.shouldExit(i)) {
                 //sell or close
                 logger.info("!!!!!!!! SELL !!!!!!!!!");
-                tradingService.sendOrder("sell", quantity, symbol);
+//                tradingService.sendOrder("sell", quantity, symbol);
             }
         }
     }
