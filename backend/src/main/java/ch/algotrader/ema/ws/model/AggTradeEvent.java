@@ -54,7 +54,7 @@ public class AggTradeEvent extends AggTrade {
     event.setPrice(trade.get("p"));
     event.setQuantity(trade.get("q"));
 
-    return null;
+    return event;
   }
 
   @Override

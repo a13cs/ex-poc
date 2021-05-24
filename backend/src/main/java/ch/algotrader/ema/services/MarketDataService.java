@@ -99,17 +99,17 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     @OnMessage
     public void onMessage(Session session, String msg) {
-        LOGGER.info("msg {}", msg);
         try {
-            HashMap<String, String> map = objectMapper.readValue(msg, new TypeReference<HashMap<String, String>>() {
-            });
+            HashMap<String, String> map = objectMapper.readValue(
+                    msg,
+                    new TypeReference<HashMap<String, String>>() {});
 
-            if (map.get("id") != null && "aggTrade".equals(map.get("e"))) {
-                final AggTradeEvent tradeEvent = AggTradeEvent.fromJson(map);
-                strategyLogic.handleTradeEvent(tradeEvent);
+            if (map.get("id") == null && "aggTrade".equals(map.get("e"))) {
+//                map.forEach((k,v) -> LOGGER.info("key::{}  value::{}",k,v));
+//                LOGGER.info("msg {}", msg);
+                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));
             } else if (map.get("result") != null) {
-                // pb
-                LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}",ChannelSubscription.trades(topic), msg);
+                LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}", ChannelSubscription.trades(topic), msg);
             }
         } catch (JsonProcessingException jpe) {
             // ignore
