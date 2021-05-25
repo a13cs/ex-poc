@@ -20,6 +20,8 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -27,6 +29,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -61,6 +64,9 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     private Session session;
 
     @Autowired
+    private ConfigurableApplicationContext context;
+
+    @Autowired
     public MarketDataService(StrategyLogic strategyLogic) {
         this.strategyLogic = strategyLogic;
     }
@@ -68,20 +74,19 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     public void subscribeTrades(String topic) {
         if(isBlank(topic)) this.topic = topic;
         try {
-            if (this.session == null || ! this.session.isOpen()) {
-                this.session = initSession();
-            }
-            ChannelSubscription subscription = ChannelSubscription.trades(topic);
+            if (this.session == null || ! this.session.isOpen() ) {
+                if (!initSession()) return;
+                ChannelSubscription subscription = ChannelSubscription.trades(topic);
 //            subscription.setSignature(createSignature(subscription));
 
-            final String ser = objectMapper.writeValueAsString(subscription);
-            LOGGER.info("sending " + ser);
-            this.session.getBasicRemote().sendText(ser);
+                final String ser = objectMapper.writeValueAsString(subscription);
+                LOGGER.info("sending " + ser);
+                this.session.getBasicRemote().sendText(ser);
 
-            String list = objectMapper.writeValueAsString(ChannelSubscription.list());
-            this.session.getBasicRemote().sendText(list);
-            LOGGER.info("sending " + list);
-
+                String list = objectMapper.writeValueAsString(ChannelSubscription.list());
+                this.session.getBasicRemote().sendText(list);
+                LOGGER.info("sending " + list);
+            }
         } catch (IOException e) {
             LOGGER.error(e);
         }
@@ -105,8 +110,9 @@ public class MarketDataService implements DisposableBean, InitializingBean {
                     new TypeReference<HashMap<String, String>>() {});
 
             if (map.get("id") == null && "aggTrade".equals(map.get("e"))) {
-//                map.forEach((k,v) -> LOGGER.info("key::{}  value::{}",k,v));
 //                LOGGER.info("msg {}", msg);
+//                map.forEach((k,v) -> LOGGER.info("key::{}  value::{}",k,v));
+
                 strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));
             } else if (map.get("result") != null) {
                 LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}", ChannelSubscription.trades(topic), msg);
@@ -121,25 +127,26 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @Override
     public void destroy() throws Exception {
         LOGGER.info("Shutting down web socket session");
-        this.session.close();
+        if (session != null) this.session.close();
     }
 
     @Override
-    public void afterPropertiesSet() {
-        this.session = initSession();
-    }
+    public void afterPropertiesSet() { }
 
-    private Session initSession() {
+    private boolean initSession() {
         Session ssn = null;
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
             ssn = container.connectToServer(this, URI.create(wsUrl + "btcusdt" + "@aggTrade"));
             LOGGER.info("session open: " + ssn.isOpen());
 
-        } catch (DeploymentException | IOException e) {
-            LOGGER.error(e);
+            this.session = ssn;
+            return true;
+        } catch (DeploymentException | IOException | UnresolvedAddressException e) {
+            LOGGER.error("Could not initialize websocket session. ", e);
+            SpringApplication.exit(context);
         }
-        return ssn;
+        return false;
     }
 
     private String createSignature(ChannelSubscription subscription) throws JsonProcessingException {

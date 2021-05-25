@@ -15,9 +15,9 @@ import java.time.ZonedDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BarModel {
 
-    private Duration timePeriod;
     private ZonedDateTime beginTime;
     private ZonedDateTime endTime;
+    private Duration timePeriod;
     private Double openPrice;
     private Double closePrice;
     private Double highPrice;
@@ -30,7 +30,6 @@ public class BarModel {
     private Boolean bearish;
     private Boolean bullish;
 
-    //  todo: add timestamp
 
     public static BarModel fromBar(Bar bar) {
         double openPrice = bar.getOpenPrice() != null ? bar.getOpenPrice().doubleValue() : 0;
@@ -39,20 +38,21 @@ public class BarModel {
         double lowPrice = bar.getLowPrice() != null ? bar.getLowPrice().doubleValue() : 0;
         double amount = bar.getAmount() != null ? bar.getAmount().doubleValue() : 0;
         double volume = bar.getVolume() != null ? bar.getVolume().doubleValue() : 0;
+
         return new BarModel(
-          bar.getTimePeriod(),
-          bar.getBeginTime(),
-          bar.getEndTime(),
+                bar.getBeginTime(),
+                bar.getEndTime(),
+                bar.getTimePeriod(),
                 openPrice,
                 closePrice,
                 highPrice,
                 lowPrice,
                 amount,
                 volume,
-          bar.getTrades(),
-          bar.getSimpleDateName(),
-          bar.isBearish(),
-          bar.isBullish()
+                bar.getTrades(),
+                bar.getSimpleDateName(),
+                bar.isBearish(),
+                bar.isBullish()
         );
     }
 

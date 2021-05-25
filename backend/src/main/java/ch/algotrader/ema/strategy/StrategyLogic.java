@@ -5,6 +5,7 @@ import ch.algotrader.ema.services.TradingService;
 import ch.algotrader.ema.ws.model.AggTradeEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +33,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service
 public class StrategyLogic implements InitializingBean {
@@ -60,6 +61,8 @@ public class StrategyLogic implements InitializingBean {
     private final BarSeries series;
 
     private DifferenceIndicator emaDifference;
+    private EMAIndicator emaLong;
+    private EMAIndicator emaShort;
 
     @Autowired
     public StrategyLogic(TradingService tradingService) {
@@ -70,19 +73,19 @@ public class StrategyLogic implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
         ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(this.series);
-        EMAIndicator emaShort = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
-        EMAIndicator emaLong = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
+        emaShort = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
+        emaLong = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
         this.emaDifference = new DifferenceIndicator(emaShort, emaLong);
     }
 
     public void handleTradeEvent(AggTradeEvent event) {
         if (this.series.getEndIndex() >= 0) {
             synchronized (series) {
-                if (isNotBlank(event.getQuantity()) && isNotBlank(event.getPrice()))
-                    series.addTrade(
-                            Math.abs(Double.parseDouble(event.getQuantity())),
-                            Math.abs(Double.parseDouble(event.getPrice()))
-                    );
+                double amount = Math.abs(Double.parseDouble(event.getQuantity()));
+                double price  = Math.abs(Double.parseDouble(event.getPrice()));
+                if (price > 0) {
+                    series.addTrade(amount, price);
+                }
             }
         }
     }
@@ -106,15 +109,16 @@ public class StrategyLogic implements InitializingBean {
         int i = series.getEndIndex();
         if(i < 1) return;
 
-//        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//        boolean exists = Files.exists(Paths.get(fileName));
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
 
-            HashMap<String, String> barFields =
+            BarModel barModel = BarModel.fromBar(series.getLastBar());
+//            mapper.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE, true);
+//            mapper.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, true);
+            Map<String, String> barFields =
                     mapper.readValue(
-                        mapper.writeValueAsString(BarModel.fromBar(series.getLastBar())),
-                        new TypeReference<HashMap<String, String>>() { }
+                        mapper.writeValueAsString(barModel),
+                        new TypeReference<LinkedHashMap<String, String>>() { }
                     );
 //            values.forEach(logger::info);
             String keys = String.join(",", barFields.keySet());
@@ -130,15 +134,10 @@ public class StrategyLogic implements InitializingBean {
                 System.arraycopy(keys.getBytes(UTF_8), 0, buffer, 0, keysLength);
                 out.write(buffer);
                 out.write(newLine, 0, newLine.length);
-//                baos.write(keys.getBytes(UTF_8));
-//                baos.write(lineSeparator().getBytes(UTF_8));
-//                baos.writeTo(out);
             }
             out.write(values.getBytes(UTF_8), 0, values.getBytes(UTF_8).length);
             out.write(newLine, 0, newLine.length);
-//            baos.write(values.getBytes(UTF_8));
-//            out.write(newLine, 0, newLine.length);
-//            baos.writeTo(out);
+
         } catch (IOException e) {
             logger.error("Could not write to CSV.", e);
         }
@@ -159,18 +158,18 @@ public class StrategyLogic implements InitializingBean {
                     bar.getTrades());
             
         } else if (i > emaPeriodLong) {
-            Num emaDiff = this.emaDifference.getValue(i);
-            Num emaDiffPrev = this.emaDifference.getValue(i - 1);
+//            Num emaDiff = this.emaDifference.getValue(i);
+//            Num emaDiffPrev = this.emaDifference.getValue(i - 1);
 
-            logger.info("open {} high {} low {} close {} vol {} trades {} emaDiffPrev {} emaDiff {}",
+            logger.info("open {} high {} low {} close {} vol {} trades {} emaDiff {}",
                     bar.getOpenPrice(),
                     bar.getHighPrice(),
                     bar.getLowPrice(),
                     bar.getClosePrice(),
                     bar.getVolume(),
                     bar.getTrades(),
-                    emaDiffPrev,
-                    emaDiff);
+                    emaLong.getValue(i).minus(emaShort.getValue(i))
+            );
         }
         try {
             logger.info(mapper.writeValueAsString(bar));
