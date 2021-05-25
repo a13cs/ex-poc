@@ -5,7 +5,6 @@ import ch.algotrader.ema.services.TradingService;
 import ch.algotrader.ema.ws.model.AggTradeEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +15,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.EMAIndicator;
-import org.ta4j.core.indicators.MACDIndicator;
-import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.DifferenceIndicator;
-import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
@@ -49,6 +45,7 @@ public class StrategyLogic implements InitializingBean {
         mapper.findAndRegisterModules();
     }
 
+    @Value("${barDuration}")
     private final int barDuration = 5;
 
     @Value("${symbol}") private String symbol;
@@ -61,8 +58,9 @@ public class StrategyLogic implements InitializingBean {
     private final BarSeries series;
 
     private DifferenceIndicator emaDifference;
-    private EMAIndicator emaLong;
-    private EMAIndicator emaShort;
+    private EMAIndicator longEma;
+    private EMAIndicator shortEma;
+    private ClosePriceIndicator closePriceIndicator;
 
     @Autowired
     public StrategyLogic(TradingService tradingService) {
@@ -72,10 +70,9 @@ public class StrategyLogic implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(this.series);
-        emaShort = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
-        emaLong = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
-        this.emaDifference = new DifferenceIndicator(emaShort, emaLong);
+        closePriceIndicator = new ClosePriceIndicator(this.series);
+        shortEma = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
+        longEma = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
     }
 
     public void handleTradeEvent(AggTradeEvent event) {
@@ -95,8 +92,8 @@ public class StrategyLogic implements InitializingBean {
         synchronized (series) {
             try {
                 logBar();
-                saveBarToCSV();
                 evaluateLogic();
+                saveBarToCSV();
                 createNewBar();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -113,8 +110,6 @@ public class StrategyLogic implements InitializingBean {
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
 
             BarModel barModel = BarModel.fromBar(series.getLastBar());
-//            mapper.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE, true);
-//            mapper.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, true);
             Map<String, String> barFields =
                     mapper.readValue(
                         mapper.writeValueAsString(barModel),
@@ -158,8 +153,6 @@ public class StrategyLogic implements InitializingBean {
                     bar.getTrades());
             
         } else if (i > emaPeriodLong) {
-//            Num emaDiff = this.emaDifference.getValue(i);
-//            Num emaDiffPrev = this.emaDifference.getValue(i - 1);
 
             logger.info("open {} high {} low {} close {} vol {} trades {} emaDiff {}",
                     bar.getOpenPrice(),
@@ -168,7 +161,7 @@ public class StrategyLogic implements InitializingBean {
                     bar.getClosePrice(),
                     bar.getVolume(),
                     bar.getTrades(),
-                    emaLong.getValue(i).minus(emaShort.getValue(i))
+                    longEma.getValue(i).minus(shortEma.getValue(i))
             );
         }
         try {
@@ -181,7 +174,7 @@ public class StrategyLogic implements InitializingBean {
 
     private void evaluateLogic() {
 
-        Strategy s = buildStrategy(series);
+        Strategy s = new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
 
         int i = this.series.getEndIndex();
         if (i > emaPeriodLong) {
@@ -212,24 +205,41 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    public static Strategy buildStrategy(BarSeries series) {
-        if (series == null) {
-            throw new IllegalArgumentException("Series cannot be null");
+    private void createNewBar() {
+
+        // create new bar
+        ZonedDateTime now = ZonedDateTime.now();
+        Duration duration = Duration.ofSeconds(barDuration);
+        Bar newBar = new BaseBar(duration, now, this.series.function());
+
+        // set price to closing price of previous bar
+        int i = this.series.getEndIndex();
+        if (i >= 0) {
+            Bar previousBar = series.getBar(i);
+            newBar.addPrice(previousBar.getClosePrice());
         }
 
-        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        series.addBar(newBar);
+    }
+
+//    public static Strategy buildStrategy(BarSeries series) {
+//        if (series == null) {
+//            throw new IllegalArgumentException("Series cannot be null");
+//        }
+
+//        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 
         // The bias is bullish when the shorter-moving average moves above the longer
         // moving average.
         // The bias is bearish when the shorter-moving average moves below the longer
         // moving average.
-        EMAIndicator shortEma = new EMAIndicator(closePrice, 9);
-        EMAIndicator longEma = new EMAIndicator(closePrice, 26);
+//        EMAIndicator shortEma = new EMAIndicator(closePrice, 9);
+//        EMAIndicator longEma = new EMAIndicator(closePrice, 26);
 
-        StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(series, 14);
-
-        MACDIndicator macd = new MACDIndicator(closePrice, 9, 26);
-        EMAIndicator emaMacd = new EMAIndicator(macd, 18);
+//        StochasticOscillatorKIndicator stochasticOscillK = new StochasticOscillatorKIndicator(series, 14);
+//
+//        MACDIndicator macd = new MACDIndicator(closePrice, 9, 26);
+//        EMAIndicator emaMacd = new EMAIndicator(macd, 18);
 
 //        // Entry rule
 //        Rule entryRule = new OverIndicatorRule(shortEma, longEma) // Trend
@@ -243,24 +253,7 @@ public class StrategyLogic implements InitializingBean {
 //
 //        return new BaseStrategy(entryRule, exitRule);
 
-        return new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
-    }
-
-    private void createNewBar() {
-    
-        // create new bar
-        ZonedDateTime now = ZonedDateTime.now();
-        Duration duration = Duration.ofSeconds(barDuration);
-        Bar newBar = new BaseBar(duration, now, this.series.function());
-    
-        // set price to closing price of previous bar
-        int i = this.series.getEndIndex();
-        if (i >= 0) {
-            Bar previousBar = series.getBar(i);
-            newBar.addPrice(previousBar.getClosePrice());
-        }
-    
-        series.addBar(newBar);
-    }
+//        return new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
+//    }
 
 }
