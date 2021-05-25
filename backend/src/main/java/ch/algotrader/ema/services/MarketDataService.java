@@ -131,7 +131,9 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     }
 
     @Override
-    public void afterPropertiesSet() { }
+    public void afterPropertiesSet() {
+        // todo: load csv
+    }
 
     private boolean initSession() {
         Session ssn = null;

@@ -32,11 +32,6 @@ public class Application implements CommandLineRunner {
     public ConfigurableApplicationContext getContext() {
         return context;
     }
-    @Bean
-    public BarSeries getSeries() {
-        return new BaseBarSeriesBuilder().withName("bnc_series").build();
-    }
-
 
     @Override
     public void run(String... args) {

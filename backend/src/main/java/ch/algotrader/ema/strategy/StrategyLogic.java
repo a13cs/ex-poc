@@ -55,12 +55,14 @@ public class StrategyLogic implements InitializingBean {
     @Value("${emaPeriodLong}") private int emaPeriodLong;
 
     private final TradingService tradingService;
-    private final BarSeries series;
+
 
     private DifferenceIndicator emaDifference;
     private EMAIndicator longEma;
     private EMAIndicator shortEma;
-    private ClosePriceIndicator closePriceIndicator;
+
+    final BarSeries series;
+    ClosePriceIndicator closePriceIndicator;
 
     @Autowired
     public StrategyLogic(TradingService tradingService) {
@@ -154,14 +156,14 @@ public class StrategyLogic implements InitializingBean {
             
         } else if (i > emaPeriodLong) {
 
-            logger.info("open {} high {} low {} close {} vol {} trades {} emaDiff {}",
+            logger.info("open {} high {} low {} close {} vol {} trades {}",
                     bar.getOpenPrice(),
                     bar.getHighPrice(),
                     bar.getLowPrice(),
                     bar.getClosePrice(),
                     bar.getVolume(),
-                    bar.getTrades(),
-                    longEma.getValue(i).minus(shortEma.getValue(i))
+                    bar.getTrades()
+//                    longEma.getValue(i).minus(shortEma.getValue(i))
             );
         }
         try {
