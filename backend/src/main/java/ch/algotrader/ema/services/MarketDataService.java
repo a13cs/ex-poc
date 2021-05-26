@@ -6,8 +6,6 @@ import ch.algotrader.ema.ws.JSONTextDecoder;
 import ch.algotrader.ema.ws.JSONTextEncoder;
 import ch.algotrader.ema.ws.model.AggTradeEvent;
 import ch.algotrader.ema.ws.model.ChannelSubscription;
-import com.binance.api.client.BinanceApiClientFactory;
-import com.binance.api.client.BinanceApiWebSocketClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -56,7 +54,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @Value("${api-secret}") private String apiSecret;
 
     private final StrategyLogic strategyLogic;
-    private final BinanceApiWebSocketClient client = BinanceApiClientFactory.newInstance().newWebSocketClient();
+//    private final BinanceApiWebSocketClient client = BinanceApiClientFactory.newInstance().newWebSocketClient();
 
     @Value("${ws-uri}")
     private String wsUrl;
