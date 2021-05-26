@@ -179,7 +179,7 @@ public class StrategyLogic implements InitializingBean {
         Strategy s = new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
 
         int i = this.series.getEndIndex();
-        if (i > emaPeriodLong) {
+        if (i >= emaPeriodLong) {
 /*
             Num emaDiff = this.emaDifference.getValue(i);
             Num emaDiffPrev = this.emaDifference.getValue(i - 1);

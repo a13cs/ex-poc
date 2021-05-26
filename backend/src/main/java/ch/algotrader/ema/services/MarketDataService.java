@@ -39,14 +39,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public class MarketDataService implements DisposableBean, InitializingBean {
 
     private static final Logger LOGGER = LogManager.getLogger(MarketDataService.class);
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
     {
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        objectMapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
-        objectMapper.configure(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+        mapper.configure(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
 
-        objectMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        objectMapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
+        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+        mapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
     }
 
     private String topic;
@@ -77,11 +77,11 @@ public class MarketDataService implements DisposableBean, InitializingBean {
                 ChannelSubscription subscription = ChannelSubscription.trades(topic);
 //            subscription.setSignature(createSignature(subscription));
 
-                final String ser = objectMapper.writeValueAsString(subscription);
+                final String ser = mapper.writeValueAsString(subscription);
                 LOGGER.info("sending " + ser);
                 this.session.getBasicRemote().sendText(ser);
 
-                String list = objectMapper.writeValueAsString(ChannelSubscription.list());
+                String list = mapper.writeValueAsString(ChannelSubscription.list());
                 this.session.getBasicRemote().sendText(list);
                 LOGGER.info("sending " + list);
             }
@@ -103,7 +103,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @OnMessage
     public void onMessage(Session session, String msg) {
         try {
-            HashMap<String, String> map = objectMapper.readValue(
+            HashMap<String, String> map = mapper.readValue(
                     msg,
                     new TypeReference<HashMap<String, String>>() {});
 
