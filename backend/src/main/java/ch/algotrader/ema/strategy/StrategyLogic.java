@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.indicators.helpers.DifferenceIndicator;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
@@ -45,11 +44,17 @@ public class StrategyLogic implements InitializingBean {
         mapper.findAndRegisterModules();
     }
 
-    @Value("${barDuration}")
-    private final int barDuration = 5;
+    @Value("${barDuration}") // todo
+    private final int barDuration = 10;
 
-    @Value("${initCsv}")
+    @Value("${initFromCsv}")
     private boolean initCsv;
+
+    @Value("${saveToCsv}")
+    private boolean saveToCsv;
+
+    @Value("${offline}")
+    private boolean offline;
 
     @Value("${symbol}") private String symbol;
     @Value("${quantity}") private BigDecimal quantity;
@@ -58,13 +63,10 @@ public class StrategyLogic implements InitializingBean {
     @Value("${emaPeriodLong}") private int emaPeriodLong;
 
     private final TradingService tradingService;
+//    private DifferenceIndicator emaDifference;
+    private Strategy strategy;
 
-
-    private DifferenceIndicator emaDifference;
-    private EMAIndicator longEma;
-    private EMAIndicator shortEma;
-
-    private /*final*/ BarSeries series;
+    private final BarSeries series;
     private ClosePriceIndicator closePriceIndicator;
     private Integer csvBarCount = 0;
 
@@ -76,9 +78,14 @@ public class StrategyLogic implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        closePriceIndicator = new ClosePriceIndicator(this.series);
-        shortEma = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
-        longEma = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
+        closePriceIndicator = new ClosePriceIndicator(series);
+        EMAIndicator sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
+        EMAIndicator lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
+
+        strategy = new BaseStrategy(
+                new OverIndicatorRule(sema, lema),
+                new UnderIndicatorRule(sema, lema)
+        );
     }
 
     public void handleTradeEvent(AggTradeEvent event) {
@@ -97,11 +104,13 @@ public class StrategyLogic implements InitializingBean {
     public void onTime() {
         synchronized (series) {
             try {
+                if(offline) return;
                 if ((series.isEmpty() || series.getBarCount() < csvBarCount) && initCsv) return;
 
-                logBar(null, 0);
-                evaluateLogic(null, 0);
-                saveBarToCSV();
+                logBar();
+                evaluateLogic();
+
+                if(saveToCsv) saveBarToCSV();
                 createNewBar();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -110,24 +119,22 @@ public class StrategyLogic implements InitializingBean {
     }
 
     public void loadBarsFromCsv(BaseBarSeries series) {
-        // todo: add all bars
-        this.series = series;
         this.csvBarCount = series.getBarCount();
 
-        for(int i = 0; i < series.getBarCount(); i++) {
+        for(int i = series.getBeginIndex(); i < series.getBarCount(); i++) {
             try {
-                logBar(series, i);
-                evaluateLogic(series, i);
+                this.series.addBar(series.getBar(i));
+
+                logBar();
+                evaluateLogic();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warn("Error adding bar {} from CSV.", i);
             }
         }
     }
 
-    private void logBar(BarSeries csvSeries, int index) {
-        BarSeries series = csvSeries == null ? this.series : csvSeries;
-
-        int i = index > 0 ? index : series.getEndIndex();
+    private void logBar() {
+        int i = series.getEndIndex();
         if(i <= 0) return;
 
         Bar bar = series.getBar(i);
@@ -159,19 +166,8 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    private void evaluateLogic(BarSeries csvSeries, int index) {
-        BarSeries series = csvSeries == null ? this.series : csvSeries;
-
-        ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(series);
-        EMAIndicator sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
-        EMAIndicator lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
-
-        Strategy s = new BaseStrategy(
-                new OverIndicatorRule(sema, lema),
-                new UnderIndicatorRule(sema, lema)
-        );
-
-        int i = index > 0 ? index : series.getEndIndex();
+    private void evaluateLogic() {
+        int i = series.getEndIndex();
         if (i > emaPeriodLong) {
 /*
             Num emaDiff = this.emaDifference.getValue(i);
@@ -189,11 +185,11 @@ public class StrategyLogic implements InitializingBean {
             }
 */
 
-            if(s.shouldEnter(i)) {
+            if(strategy.shouldEnter(i)) {
                 // buy
                 logger.info("!!!!!!!! BUY !!!!!!!!!)");
 //                tradingService.sendOrder("buy", quantity, symbol);
-            } else if(s.shouldExit(i)) {
+            } else if(strategy.shouldExit(i)) {
                 //sell or close
                 logger.info("!!!!!!!! SELL !!!!!!!!!");
 //                tradingService.sendOrder("sell", quantity, symbol);
@@ -205,11 +201,12 @@ public class StrategyLogic implements InitializingBean {
         String fileName = "bnc_trades_" + barDuration + "s.csv";
         int i = series.getEndIndex();
         if(i < 1) return;
+        Bar bar = series.getBar(i);
 
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
 
-            BarModel barModel = BarModel.fromBar(series.getLastBar());
+            BarModel barModel = BarModel.fromBar(bar);
             Map<String, String> barFields =
                     mapper.readValue(
                             mapper.writeValueAsString(barModel),

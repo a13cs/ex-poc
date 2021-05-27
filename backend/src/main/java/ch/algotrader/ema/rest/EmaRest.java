@@ -4,6 +4,7 @@ import ch.algotrader.ema.strategy.SeriesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -16,21 +17,26 @@ import java.util.List;
 @RestController
 public class EmaRest {
 
+    @Value("${barDuration}")
+    private int barDuration;
+
     @Autowired
     SeriesService seriesService;
 
-    private static final String FILE_NAME = "bnc_trades_" + 5 + "s.csv";
+    private static final String FILE_NAME = "bnc_trades_%ss.csv";
 
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
     public List<List<String>> latestBars(@PathVariable(value = "from") String from) throws IOException {
-        return seriesService.getLatestCSVBars(from, Paths.get(FILE_NAME));
+        String fileName = String.format(FILE_NAME, barDuration);
+        return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{indicator}/{from}")
     public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) throws IOException {
-        return seriesService.getIndicator(indicator, from, Paths.get(FILE_NAME));
+        String fileName = String.format(FILE_NAME, barDuration);
+        return seriesService.getIndicator(indicator, from, Paths.get(fileName));
     }
 
     // todo

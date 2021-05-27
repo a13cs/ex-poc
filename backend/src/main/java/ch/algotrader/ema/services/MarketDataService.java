@@ -19,7 +19,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BaseBarSeries;
@@ -43,17 +42,17 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     private static final Logger LOGGER = LogManager.getLogger(MarketDataService.class);
 
-    private static final ObjectMapper mapper = new ObjectMapper();
-    {
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
-        mapper.configure(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    static {
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MAPPER.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+        MAPPER.configure(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
 
-        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-        mapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
+        MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
+        MAPPER.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
     }
 
-    private static final String FILE_NAME = "bnc_trades_" + 5 + "s.csv";
+    private static final String FILE_NAME = "bnc_trades_%ss.csv";
 
     private String topic;
 
@@ -71,8 +70,11 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @Autowired
     private ConfigurableApplicationContext context;
 
-    @Value("${initCsv}")
+    @Value("${initFromCsv}")
     private boolean initCsv;
+
+    @Value("${barDuration}")
+    private int barDuration;
 
 
     @Autowired
@@ -85,7 +87,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         if(isNotBlank(topic)) this.topic = topic;
         try {
             if (initCsv) {
-                BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", Paths.get(FILE_NAME));
+                BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", Paths.get(String.format(FILE_NAME, barDuration)));
                 if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
             }
 
@@ -95,13 +97,13 @@ public class MarketDataService implements DisposableBean, InitializingBean {
                 }
 
                 ChannelSubscription subscription = ChannelSubscription.trades(topic);
-                final String sub = mapper.writeValueAsString(subscription);
+                final String sub = MAPPER.writeValueAsString(subscription);
 
                 LOGGER.info("sending " + sub);
                 this.session.getBasicRemote().sendText(sub);
 
 //                 list active
-                String list = mapper.writeValueAsString(ChannelSubscription.list());
+                String list = MAPPER.writeValueAsString(ChannelSubscription.list());
                 this.session.getBasicRemote().sendText(list);
                 LOGGER.info("sending " + list);
             }
@@ -123,9 +125,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @OnMessage
     public void onMessage(Session session, String msg) {
         try {
-            HashMap<String, String> map = mapper.readValue(
-                    msg,
-                    new TypeReference<HashMap<String, String>>() {});
+            HashMap<String, String> map = MAPPER.readValue( msg, new TypeReference<>(){} );
 
             if (map.get("id") == null && "aggTrade".equals(map.get("e"))) {
 //                LOGGER.info("msg {}", msg);
@@ -153,7 +153,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     }
 
     private boolean initSession() {
-        Session ssn = null;
+        Session ssn;
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
             ssn = container.connectToServer(this, URI.create(wsUrl + "btcusdt" + "@aggTrade"));
@@ -163,7 +163,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
             return true;
         } catch (DeploymentException | IOException | UnresolvedAddressException e) {
             LOGGER.error("Could not initialize websocket session. ", e);
-            SpringApplication.exit(context);
+//            SpringApplication.exit(context);
         }
         return false;
     }

@@ -26,16 +26,18 @@ public class BarModel {
     private Double volume;
     private Long trades;
 
-    private String dateName;
-    private Boolean bearish;
-    private Boolean bullish;
+//    private String dateName;
+//    private Boolean bearish;
+//    private Boolean bullish;
 
 
     public static BarModel fromBar(Bar bar) {
+
         double openPrice = bar.getOpenPrice() != null ? bar.getOpenPrice().doubleValue() : 0;
         double closePrice = bar.getClosePrice() != null ? bar.getClosePrice().doubleValue() : 0;
         double highPrice = bar.getHighPrice() != null ? bar.getHighPrice().doubleValue() : 0;
         double lowPrice = bar.getLowPrice() != null ? bar.getLowPrice().doubleValue() : 0;
+
         double amount = bar.getAmount() != null ? bar.getAmount().doubleValue() : 0;
         double volume = bar.getVolume() != null ? bar.getVolume().doubleValue() : 0;
 
@@ -49,10 +51,11 @@ public class BarModel {
                 lowPrice,
                 amount,
                 volume,
-                bar.getTrades(),
-                bar.getSimpleDateName(),
-                bar.isBearish(),
-                bar.isBullish()
+                bar.getTrades()
+                // may not save
+//                bar.getDateName(),
+//                bar.isBearish(),
+//                bar.isBullish()
         );
     }
 

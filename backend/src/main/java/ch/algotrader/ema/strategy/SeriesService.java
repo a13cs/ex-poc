@@ -11,12 +11,18 @@ import org.ta4j.core.BaseBarSeries;
 import org.ta4j.core.BaseBarSeriesBuilder;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.Num;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.time.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +37,10 @@ public class SeriesService {
     private static final Logger logger = LoggerFactory.getLogger(SeriesService.class);
 
     @Value("${emaRestBarCount}")
-    private Integer emaBarCount = 10;
+    private Integer emaBarCount;
+
+    @Value("${barDuration}")
+    private Integer barDuration;
 
     @Autowired
     private StrategyLogic strategyLogic;
@@ -76,12 +85,23 @@ public class SeriesService {
         EMAIndicator ema = new EMAIndicator(close, emaBarCount);
 
         List<Bar> barData = series.getBarData();
-        int i = emaBarCount;
-        for(Bar b: barData) {
-            if (i >= barData.size()-emaBarCount) break;
-            long seconds = b.getBeginTime().toLocalDateTime().toEpochSecond(ZoneOffset.UTC);
-            String beginTime = String.valueOf(seconds);
-            String emaValue  = String.valueOf(ema.getValue(i++).doubleValue());
+        for(int i = 0; i < barData.size(); i++) {
+            Bar b = barData.get(i);
+
+            Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
+            String beginTime = String.valueOf(micro.getEpochSecond());
+
+            Num value = close.getValue(i);
+            try {
+                value = ema.getValue(i);
+            } catch (Exception e) {
+                logger.warn("EMAIndicator error at index " + i, e);
+            }
+
+            double val = value.doubleValue();
+            long truncated = (long) val;
+            long micros = Math.round((val - truncated) * 1_000_000);
+            String emaValue  = truncated + "." + micros;
 
             indicatorValues.add(Arrays.asList(beginTime, emaValue));
         }
@@ -98,14 +118,21 @@ public class SeriesService {
             // closePrice
             double price = Math.abs(Double.parseDouble(b.get(5)));
             if (price > 0) {
-//                logger.info("Price at {}: {}",b.get(1), price);
-                // TODO: ceil
-                String[] split = b.get(1).split("\\."); // 1622064025.004043000
-                long barEndTime = Math.abs(Long.parseLong(split[0]));
-                ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(barEndTime * 1000), ZoneId.of("UTC"));
+                logger.debug("Price at {}: {}",b.get(1), price);
+
+                // endTime
+                BigDecimal decimalSeconds = new BigDecimal(b.get(1));  // 1622064025.004043001
+                long seconds = decimalSeconds.longValue();
+                long nanos = decimalSeconds.subtract(BigDecimal.valueOf(seconds))
+                        .movePointRight(9)
+                        .longValueExact();
+                Instant inst = Instant.ofEpochSecond(seconds, nanos);
+                logger.debug("Nanos for price {} {}",price, inst);  // 2021-05-26T21:20:25.004043001Z
+                ZonedDateTime dateTime = ZonedDateTime.ofInstant(inst, ZoneId.of("UTC"));
+
                 Bar bar = new BaseBar(
-                        Duration.ofSeconds(5),
-                        zonedDateTime,
+                        Duration.ofSeconds(barDuration),
+                        dateTime,
                         b.get(3),  // open
                         b.get(5),  // high
                         b.get(6),  // low
@@ -113,10 +140,11 @@ public class SeriesService {
                         b.get(8),  // volume
                         b.get(7)   // amount
                 );
+
                 try{
                     series.addBar(bar);
                 } catch (Exception e) {
-                    logger.info("Could not add bar: {}", bar);
+                    logger.warn("Could not add bar (replacing last): {}", bar);
                     series.addBar(bar,true);
                 }
             }
@@ -127,4 +155,9 @@ public class SeriesService {
     public List<List<String>> getPositions(String from, Path path) {
         return Collections.emptyList();
     }
+
+    // todo: get latest bars from in memory series
+
+    // todo: agg bars from csv by timeframe
+
 }
