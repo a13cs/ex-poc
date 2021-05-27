@@ -23,14 +23,20 @@ public class EmaRest {
 
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
-    @RequestMapping(method = RequestMethod.GET, path = "/bars/{index}")
-    public List<List<String>> latestBars(@PathVariable(value = "index") String index) throws IOException {
-        return seriesService.getLatestBars(index, Paths.get(FILE_NAME));
+    @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
+    public List<List<String>> latestBars(@PathVariable(value = "from") String from) throws IOException {
+        return seriesService.getLatestCSVBars(from, Paths.get(FILE_NAME));
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/bars/{indicator}/{index}")
-    public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "index") String index) throws IOException {
-        return seriesService.getIndicator(indicator, index, Paths.get(FILE_NAME));
+    @RequestMapping(method = RequestMethod.GET, path = "/bars/{indicator}/{from}")
+    public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) throws IOException {
+        return seriesService.getIndicator(indicator, from, Paths.get(FILE_NAME));
+    }
+
+    // todo
+    @RequestMapping(method = RequestMethod.GET, path = "/bars/positions/{from}")
+    public List<List<String>> latestPositions(@PathVariable(value = "from") String from) {
+        return seriesService.getPositions(from, Paths.get(FILE_NAME));
     }
 
 }

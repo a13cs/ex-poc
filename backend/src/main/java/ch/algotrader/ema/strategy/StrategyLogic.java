@@ -48,6 +48,9 @@ public class StrategyLogic implements InitializingBean {
     @Value("${barDuration}")
     private final int barDuration = 5;
 
+    @Value("${initCsv}")
+    private boolean initCsv;
+
     @Value("${symbol}") private String symbol;
     @Value("${quantity}") private BigDecimal quantity;
 
@@ -61,8 +64,9 @@ public class StrategyLogic implements InitializingBean {
     private EMAIndicator longEma;
     private EMAIndicator shortEma;
 
-    final BarSeries series;
-    ClosePriceIndicator closePriceIndicator;
+    private /*final*/ BarSeries series;
+    private ClosePriceIndicator closePriceIndicator;
+    private Integer csvBarCount = 0;
 
     @Autowired
     public StrategyLogic(TradingService tradingService) {
@@ -93,12 +97,106 @@ public class StrategyLogic implements InitializingBean {
     public void onTime() {
         synchronized (series) {
             try {
-                logBar();
-                evaluateLogic();
+                if ((series.isEmpty() || series.getBarCount() < csvBarCount) && initCsv) return;
+
+                logBar(null, 0);
+                evaluateLogic(null, 0);
                 saveBarToCSV();
                 createNewBar();
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    public void loadBarsFromCsv(BaseBarSeries series) {
+        // todo: add all bars
+        this.series = series;
+        this.csvBarCount = series.getBarCount();
+
+        for(int i = 0; i < series.getBarCount(); i++) {
+            try {
+                logBar(series, i);
+                evaluateLogic(series, i);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void logBar(BarSeries csvSeries, int index) {
+        BarSeries series = csvSeries == null ? this.series : csvSeries;
+
+        int i = index > 0 ? index : series.getEndIndex();
+        if(i <= 0) return;
+
+        Bar bar = series.getBar(i);
+        if (i < emaPeriodLong) {
+            logger.info("open {} high {} low {} close {} vol {} trades {}",
+                    bar.getOpenPrice(),
+                    bar.getHighPrice(),
+                    bar.getLowPrice(),
+                    bar.getClosePrice(),
+                    bar.getVolume(),
+                    bar.getTrades());
+
+        } else if (i > emaPeriodLong) {
+
+            logger.info("open {} high {} low {} close {} vol {} trades {}",
+                    bar.getOpenPrice(),
+                    bar.getHighPrice(),
+                    bar.getLowPrice(),
+                    bar.getClosePrice(),
+                    bar.getVolume(),
+                    bar.getTrades()
+//                    longEma.getValue(i).minus(shortEma.getValue(i))
+            );
+        }
+        try {
+            logger.info(mapper.writeValueAsString(bar));  // check time
+        } catch (JsonProcessingException e) {
+            logger.info("err", e);
+        }
+    }
+
+    private void evaluateLogic(BarSeries csvSeries, int index) {
+        BarSeries series = csvSeries == null ? this.series : csvSeries;
+
+        ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(series);
+        EMAIndicator sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
+        EMAIndicator lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
+
+        Strategy s = new BaseStrategy(
+                new OverIndicatorRule(sema, lema),
+                new UnderIndicatorRule(sema, lema)
+        );
+
+        int i = index > 0 ? index : series.getEndIndex();
+        if (i > emaPeriodLong) {
+/*
+            Num emaDiff = this.emaDifference.getValue(i);
+            Num emaDiffPrev = this.emaDifference.getValue(i - 1);
+
+            if (emaDiff.doubleValue() > 0 && emaDiffPrev.doubleValue() <= 0) {
+
+                logger.info("!!!!!!!! BUY !!!!!!!!!)");
+                tradingService.sendOrder("buy", quantity, symbol);
+
+            } else if (emaDiff.doubleValue() < 0 && emaDiffPrev.doubleValue() >= 0) {
+
+                logger.info("!!!!!!!! SELL !!!!!!!!!");
+                tradingService.sendOrder("sell", quantity, symbol);
+            }
+*/
+
+            if(s.shouldEnter(i)) {
+                // buy
+                logger.info("!!!!!!!! BUY !!!!!!!!!)");
+//                tradingService.sendOrder("buy", quantity, symbol);
+            } else if(s.shouldExit(i)) {
+                //sell or close
+                logger.info("!!!!!!!! SELL !!!!!!!!!");
+//                tradingService.sendOrder("sell", quantity, symbol);
             }
         }
     }
@@ -114,8 +212,8 @@ public class StrategyLogic implements InitializingBean {
             BarModel barModel = BarModel.fromBar(series.getLastBar());
             Map<String, String> barFields =
                     mapper.readValue(
-                        mapper.writeValueAsString(barModel),
-                        new TypeReference<LinkedHashMap<String, String>>() { }
+                            mapper.writeValueAsString(barModel),
+                            new TypeReference<LinkedHashMap<String, String>>() { }
                     );
 //            values.forEach(logger::info);
             String keys = String.join(",", barFields.keySet());
@@ -137,73 +235,6 @@ public class StrategyLogic implements InitializingBean {
 
         } catch (IOException e) {
             logger.error("Could not write to CSV.", e);
-        }
-    }
-
-    private void logBar() {
-        int i = this.series.getEndIndex();
-        if(i <= 0) return;
-
-        Bar bar = this.series.getBar(i);
-        if (i < emaPeriodLong) {
-            logger.info("open {} high {} low {} close {} vol {} trades {}",
-                    bar.getOpenPrice(),
-                    bar.getHighPrice(),
-                    bar.getLowPrice(),
-                    bar.getClosePrice(),
-                    bar.getVolume(),
-                    bar.getTrades());
-            
-        } else if (i > emaPeriodLong) {
-
-            logger.info("open {} high {} low {} close {} vol {} trades {}",
-                    bar.getOpenPrice(),
-                    bar.getHighPrice(),
-                    bar.getLowPrice(),
-                    bar.getClosePrice(),
-                    bar.getVolume(),
-                    bar.getTrades()
-//                    longEma.getValue(i).minus(shortEma.getValue(i))
-            );
-        }
-        try {
-            logger.info(mapper.writeValueAsString(bar));
-        } catch (JsonProcessingException e) {
-            logger.info("err", e);
-        }
-
-    }
-
-    private void evaluateLogic() {
-
-        Strategy s = new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
-
-        int i = this.series.getEndIndex();
-        if (i >= emaPeriodLong) {
-/*
-            Num emaDiff = this.emaDifference.getValue(i);
-            Num emaDiffPrev = this.emaDifference.getValue(i - 1);
-
-            if (emaDiff.doubleValue() > 0 && emaDiffPrev.doubleValue() <= 0) {
-
-                logger.info("!!!!!!!! BUY !!!!!!!!!)");
-                tradingService.sendOrder("buy", quantity, symbol);
-
-            } else if (emaDiff.doubleValue() < 0 && emaDiffPrev.doubleValue() >= 0) {
-
-                logger.info("!!!!!!!! SELL !!!!!!!!!");
-                tradingService.sendOrder("sell", quantity, symbol);
-            }*/
-
-            if(s.shouldEnter(i)) {
-                // buy
-                logger.info("!!!!!!!! BUY !!!!!!!!!)");
-//                tradingService.sendOrder("buy", quantity, symbol);
-            } else if(s.shouldExit(i)) {
-                //sell or close
-                logger.info("!!!!!!!! SELL !!!!!!!!!");
-//                tradingService.sendOrder("sell", quantity, symbol);
-            }
         }
     }
 

@@ -26,7 +26,7 @@ public class ChannelSubscription {
                 .params(Arrays.asList(
                         pair + "@aggTrade",
                         pair + "@depth"))
-                .id(12)
+                .id(new Random(Instant.now().toEpochMilli()).nextInt(100))
 //                .timestamp(Instant.now().toEpochMilli())
                 .build();
     }

@@ -1,6 +1,7 @@
 package ch.algotrader.ema.services;
 
 
+import ch.algotrader.ema.strategy.SeriesService;
 import ch.algotrader.ema.strategy.StrategyLogic;
 import ch.algotrader.ema.ws.JSONTextDecoder;
 import ch.algotrader.ema.ws.JSONTextEncoder;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
+import org.ta4j.core.BaseBarSeries;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -29,16 +31,18 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
 
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Service
 @ClientEndpoint(encoders = {JSONTextEncoder.class}, decoders = {JSONTextDecoder.class})
 public class MarketDataService implements DisposableBean, InitializingBean {
 
     private static final Logger LOGGER = LogManager.getLogger(MarketDataService.class);
+
     private static final ObjectMapper mapper = new ObjectMapper();
     {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -49,12 +53,15 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         mapper.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
     }
 
+    private static final String FILE_NAME = "bnc_trades_" + 5 + "s.csv";
+
     private String topic;
 
     @Value("${api-secret}") private String apiSecret;
 
     private final StrategyLogic strategyLogic;
-//    private final BinanceApiWebSocketClient client = BinanceApiClientFactory.newInstance().newWebSocketClient();
+
+    private final SeriesService seriesService;
 
     @Value("${ws-uri}")
     private String wsUrl;
@@ -64,23 +71,36 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @Autowired
     private ConfigurableApplicationContext context;
 
+    @Value("${initCsv}")
+    private boolean initCsv;
+
+
     @Autowired
-    public MarketDataService(StrategyLogic strategyLogic) {
+    public MarketDataService(StrategyLogic strategyLogic, SeriesService seriesService) {
         this.strategyLogic = strategyLogic;
+        this.seriesService = seriesService;
     }
 
     public void subscribeTrades(String topic) {
-        if(isBlank(topic)) this.topic = topic;
+        if(isNotBlank(topic)) this.topic = topic;
         try {
-            if (this.session == null || ! this.session.isOpen() ) {
-                if (!initSession()) return;
+            if (initCsv) {
+                BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", Paths.get(FILE_NAME));
+                if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
+            }
+
+            if (this.session == null || !this.session.isOpen() ) {
+                if (!initSession()) {
+                    return; // or retry
+                }
+
                 ChannelSubscription subscription = ChannelSubscription.trades(topic);
-//            subscription.setSignature(createSignature(subscription));
+                final String sub = mapper.writeValueAsString(subscription);
 
-                final String ser = mapper.writeValueAsString(subscription);
-                LOGGER.info("sending " + ser);
-                this.session.getBasicRemote().sendText(ser);
+                LOGGER.info("sending " + sub);
+                this.session.getBasicRemote().sendText(sub);
 
+//                 list active
                 String list = mapper.writeValueAsString(ChannelSubscription.list());
                 this.session.getBasicRemote().sendText(list);
                 LOGGER.info("sending " + list);
@@ -130,7 +150,6 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        // todo: load csv
     }
 
     private boolean initSession() {
