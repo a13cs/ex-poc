@@ -33,8 +33,8 @@ public class EmaRest {
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/bars/{indicator}/{from}")
-    public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) throws IOException {
+    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{name}/{from}")
+    public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) throws IOException {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
     }

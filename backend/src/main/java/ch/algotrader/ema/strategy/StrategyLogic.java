@@ -45,7 +45,7 @@ public class StrategyLogic implements InitializingBean {
     }
 
     @Value("${barDuration}") // todo
-    private final int barDuration = 10;
+    private final int barDuration = 5;
 
     @Value("${initFromCsv}")
     private boolean initCsv;
