@@ -167,8 +167,9 @@ public class StrategyLogic implements InitializingBean {
     }
 
     private void evaluateLogic() {
-        int i = series.getEndIndex();
-        if (i > emaPeriodLong) {
+        try {
+            int i = series.getEndIndex();
+            if (i > emaPeriodLong) {
 /*
             Num emaDiff = this.emaDifference.getValue(i);
             Num emaDiffPrev = this.emaDifference.getValue(i - 1);
@@ -185,15 +186,18 @@ public class StrategyLogic implements InitializingBean {
             }
 */
 
-            if(strategy.shouldEnter(i)) {
-                // buy
-                logger.info("!!!!!!!! BUY !!!!!!!!!)");
+                if (strategy.shouldEnter(i)) {
+                    // buy
+                    logger.info("!!!!!!!! BUY !!!!!!!!!)");
 //                tradingService.sendOrder("buy", quantity, symbol);
-            } else if(strategy.shouldExit(i)) {
-                //sell or close
-                logger.info("!!!!!!!! SELL !!!!!!!!!");
+                } else if (strategy.shouldExit(i)) {
+                    //sell or close
+                    logger.info("!!!!!!!! SELL !!!!!!!!!");
 //                tradingService.sendOrder("sell", quantity, symbol);
+                }
             }
+        } catch(Exception e) {
+            logger.error(e.getMessage(),e);
         }
     }
 

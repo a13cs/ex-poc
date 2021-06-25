@@ -19,7 +19,7 @@ export class AppComponent implements OnInit {
       height: 400,
       timeScale: {
         timeVisible: true,
-        secondsVisible: false,
+        secondsVisible: true,
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -27,23 +27,23 @@ export class AppComponent implements OnInit {
     });
     const series = chart.addCandlestickSeries();
 
-    let points: any[] = [];
-    points[0] = [];
-    points[0]["open"] = 1;
-    points[0]["high"] = 2;
-    points[0]["low"] = 1;
-    points[0]["close"] = 2;
-    // points[0]["time"] = '2019-04-11'
-    points[0]["time"] = 1622211820
+    // let points: any[] = [];
+    // points[0] = [];
+    // points[0]["open"] = 1;
+    // points[0]["high"] = 2;
+    // points[0]["low"] = 1;
+    // points[0]["close"] = 2;
+    // // points[0]["time"] = '2019-04-11'
+    // points[0]["time"] = 1622211820
+    //
+    // points[1] = [];
+    // points[1]["open"] = 2;
+    // points[1]["high"] = 3;
+    // points[1]["low"] = 2;
+    // points[1]["close"] = 3;
+    // points[1]["time"] = 1622221820
 
-    points[1] = [];
-    points[1]["open"] = 2;
-    points[1]["high"] = 3;
-    points[1]["low"] = 2;
-    points[1]["close"] = 3;
-    points[1]["time"] = 1622221820
-
-    series.setData(points);
+    // series.setData(points);
     // const lineSeries = chart.addLineSeries();
     // lineSeries.setData([
     //   { time: '2019-04-11', value: 80.01 },
@@ -57,6 +57,28 @@ export class AppComponent implements OnInit {
     //   { time: '2019-04-19', value: 81.89 },
     //   { time: '2019-04-20', value: 74.43 },
     // ]);
+
+    this.http.get<any[]>('/be/bars/0').subscribe(
+    // this.http.get<any[]>('/bars/0').subscribe(
+    // this.http.get<any[]>('assets/bars.json').subscribe(
+      d => {
+        console.log(d.slice(1))
+        let data: any[] = []
+
+        d.slice(1).forEach( point => {
+          data.push(
+            {
+              open: point[/*"openPrice"*/3] | 0,
+              high: point[/*"highPrice"*/5] | 0,
+              low: point[/*"lowPrice"*/6] | 0,
+              close: point[/*"closePrice"*/4] | 0,
+              time: +point[/*"endTime"*/1] | 1622233830
+            }
+          )
+        })
+        console.log(data)
+        series.setData(data);
+      })
 
     const chartLine = createChart(document.body, {
       width: 600,
@@ -99,11 +121,12 @@ export class AppComponent implements OnInit {
 
     // this.http.get<any[]>('assets/ema_time_close.json').subscribe(
     this.http.get<any[]>('/be/indicator/a/0').subscribe(
+    // this.http.get<any[]>('/indicator/ema/0').subscribe(
       d => {
         console.log(d)
         let data: any[] = []
         d.forEach(point => {
-          data.push({time: +point[0] as UTCTimestamp, value: +point[1]})
+          data.push({time: +point[0] as UTCTimestamp, value: +point[1] | 0})
         } )
         smaLine.setData(data)
       }
