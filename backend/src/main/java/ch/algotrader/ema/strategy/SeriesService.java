@@ -45,7 +45,7 @@ public class SeriesService {
     @Autowired
     private StrategyLogic strategyLogic;
 
-    public List<List<String>> getLatestCSVBars(String index, Path path) throws IOException {
+    public List<List<String>> getLatestCSVBars(String index, Path path) /*throws IOException*/ {
         long from = Long.parseLong(index);
         if (from <= 0 ) from = 1;
 
@@ -70,7 +70,10 @@ public class SeriesService {
                 }
             }
         } catch (NoSuchFileException fileException) {
-            logger.info("NoSuchFileException", fileException);
+            logger.info("File {} has not been created yet.", path);
+            logger.warn("NoSuchFileException", fileException);
+        } catch (IOException e) {
+            logger.warn("IOException", e);
         }
 
         return Collections.emptyList();
@@ -85,7 +88,7 @@ public class SeriesService {
         EMAIndicator ema = new EMAIndicator(close, emaBarCount);
 
         List<Bar> barData = series.getBarData();
-        for(int i = 0; i < barData.size(); i++) {
+        for(int i = emaBarCount/2; i < barData.size() ; i++) {
             Bar b = barData.get(i);
 
             Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
@@ -108,7 +111,7 @@ public class SeriesService {
         return indicatorValues;
     }
 
-    public BaseBarSeries getCsvSeries(String indicatorName, String from, Path path) throws IOException {
+    public BaseBarSeries getCsvSeries(String indicatorName, String from, Path path) {
         List<List<String>> bars = getLatestCSVBars(from, path);
         if (!bars.isEmpty()) bars.remove(0); // header
 
@@ -144,7 +147,7 @@ public class SeriesService {
                 try{
                     series.addBar(bar);
                 } catch (Exception e) {
-                    logger.warn("Could not add bar (replacing last): {}", bar);
+                    logger.warn("Recreating series from CSV. Could not add bar (replacing last): {}", bar);
                     series.addBar(bar,true);
                 }
             }

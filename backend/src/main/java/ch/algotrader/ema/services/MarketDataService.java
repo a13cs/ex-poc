@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
@@ -85,14 +86,16 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     public void subscribeTrades(String topic) {
         if(isNotBlank(topic)) this.topic = topic;
-        try {
-            if (initCsv) {
-                BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", Paths.get(String.format(FILE_NAME, barDuration)));
-                if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
-            }
+        if (initCsv) {
+            Path path = Paths.get(String.format(FILE_NAME, barDuration));
+            BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", path);
+            if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
+        }
 
+        try {
             if (this.session == null || !this.session.isOpen() ) {
                 if (!initSession()) {
+                    strategyLogic.setOffline(true);
                     return; // or retry
                 }
 
@@ -162,7 +165,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
             this.session = ssn;
             return true;
         } catch (DeploymentException | IOException | UnresolvedAddressException e) {
-            LOGGER.error("Could not initialize websocket session. ", e);
+            LOGGER.warn("Could not initialize websocket session. ", e);
 //            SpringApplication.exit(context);
         }
         return false;

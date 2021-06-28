@@ -44,11 +44,8 @@ public class StrategyLogic implements InitializingBean {
         mapper.findAndRegisterModules();
     }
 
-    @Value("${barDuration}") // todo
-    private final int barDuration = 30;
-
-    @Value("${initFromCsv}")
-    private boolean initCsv;
+    @Value("${barDuration}")
+    private int barDuration;
 
     @Value("${saveToCsv}")
     private boolean saveToCsv;
@@ -88,6 +85,7 @@ public class StrategyLogic implements InitializingBean {
         );
     }
 
+
     public void handleTradeEvent(AggTradeEvent event) {
         if (this.series.getEndIndex() >= 0) {
             synchronized (series) {
@@ -100,12 +98,12 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    @Scheduled(cron = "*/" + barDuration + " * * * * *")
+    @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {
         synchronized (series) {
             try {
                 if(offline) return;
-                if ((series.isEmpty() || series.getBarCount() < csvBarCount) && initCsv) return;
+                if ((series.isEmpty() || series.getBarCount() < csvBarCount) && csvBarCount > 0) return;
 
                 logBar();
                 evaluateLogic();
@@ -207,6 +205,8 @@ public class StrategyLogic implements InitializingBean {
         if(i < 1) return;
         Bar bar = series.getBar(i);
 
+        if (bar.getTrades() == 0 ) return;
+
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
 
@@ -254,6 +254,10 @@ public class StrategyLogic implements InitializingBean {
         }
 
         series.addBar(newBar);
+    }
+
+    public void setOffline(boolean offline) {
+        this.offline = offline;
     }
 
 //    public static Strategy buildStrategy(BarSeries series) {

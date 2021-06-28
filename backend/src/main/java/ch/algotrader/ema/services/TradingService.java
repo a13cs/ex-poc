@@ -49,6 +49,7 @@ public class TradingService {
         this.restTemplate = new RestTemplate();
     }
 
+    // todo
     public void sendOrder(String side, BigDecimal quantity, String symbol) {
         try {
             final NewOrderRequest bfxRequest = createNewBFXOrder(side, quantity, symbol);
