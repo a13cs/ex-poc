@@ -33,6 +33,7 @@ public class EmaRest {
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
 
+    // todo
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{name}/{from}")
     public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) throws IOException {
         String fileName = String.format(FILE_NAME, barDuration);
@@ -44,5 +45,12 @@ public class EmaRest {
     public List<List<String>> latestPositions(@PathVariable(value = "from") String from) {
         return seriesService.getPositions(from, Paths.get(FILE_NAME));
     }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/signals/{from}")
+    public List<List<String>> latestSignals(@PathVariable(value = "from") String from) {
+        return seriesService.getSignals(from);
+    }
+
+    // todo: acc info
 
 }

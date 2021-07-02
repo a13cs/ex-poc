@@ -18,8 +18,8 @@ export class AppComponent implements OnInit {
     // create charts
 
     const chart = createChart(document.body, {
-      width: 500,
-      height: 400,
+      width: 800,
+      height: 900,
       timeScale: {
         // barSpacing: 4,
         timeVisible: true,
@@ -34,7 +34,7 @@ export class AppComponent implements OnInit {
       watermark: {
         color: 'rgba(11, 94, 29, 0.4)',
         visible: true,
-        text: 'EMA',
+        text: 'EMA Cross',
         fontSize: 24,
         horzAlign: 'left',
         vertAlign: 'bottom',
@@ -43,8 +43,14 @@ export class AppComponent implements OnInit {
 
     const series = chart.addCandlestickSeries();
 
-    let smaLineOnTop = chart.addLineSeries({
-      color: 'rgba(4, 111, 232, 1)',
+    // long
+    let smaLineFirst = chart.addLineSeries({
+      color: 'rgb(10,22,125)',
+      lineWidth: 3,
+    });
+
+    let smaLineSecond = chart.addLineSeries({
+      color: 'rgb(4,107,232)',
       lineWidth: 2,
     });
 
@@ -75,7 +81,7 @@ export class AppComponent implements OnInit {
 
     chartLine.applyOptions({
       watermark: {
-        color: 'rgba(11, 94, 29, 0.4)',
+        color: 'rgba(2,28,6,0.4)',
         visible: true,
         text: 'Close Price Line Chart',
         fontSize: 24,
@@ -85,7 +91,7 @@ export class AppComponent implements OnInit {
     });
 
     const closeLine = chartLine.addLineSeries({
-      color: 'rgba(4, 111, 232, 1)',
+      color: 'rgb(17,10,151)',
       lineWidth: 2,
     });
 
@@ -110,37 +116,59 @@ export class AppComponent implements OnInit {
                 close: point[/*"closePrice"*/4] | 0,
                 time: +point[/*"endTime"*/1]
               })
-            lineData.push({time: +point[1] as UTCTimestamp, value: +point[4] | 0})
+            // let p : number = (Math.round(point[4] * 1000) / 1000)//.toFixed(2);
+            lineData.push({time: +point[1] as UTCTimestamp, value: point[4] | 0})
           }
         })
         console.log(data)
         series.setData(data);
 
-        // todo
-        let time = data.length > 0 ? +data[1]['time'] as UTCTimestamp : Date.now() as UTCTimestamp;
-        series.setMarkers([{
-          time: time,
-          color: 'rgba(11, 94, 29, 0.4)',
-          position: 'aboveBar',
-          shape: "arrowUp",
-          text: 'B'
-        }])
-
         closeLine.setData(lineData)
       })
 
-    // todo: default be config (duration, ema length)
+    this.http.get<any[]>('/be/signals/0').subscribe( d => {
+      console.log(d)
+
+      let signals: any[] = d.map(s => {
+        return {
+          time:  +s[0] as UTCTimestamp,
+          color: s[1] === 'B' ? 'rgb(7,130,19)' : 'rgb(113,10,11)',
+          position: 'aboveBar',
+          shape: s[1] === 'B' ? "arrowUp" : "arrowDown",
+          text: s[1] || 'X'
+        }
+      })
+
+      series.setMarkers(signals)
+    })
+
+      // todo: default be config (duration, ema length)
 
     // this.http.get<any[]>('assets/ema_time_close.json').subscribe(
-    this.http.get<any[]>('/be/indicator/a/0').subscribe(
-    // this.http.get<any[]>('/indicator/ema/0').subscribe(
+    this.http.get<any[]>('/be/indicator/long/0').subscribe(
+    // this.http.get<any[]>('/indicator/long/0').subscribe(
       d => {
         console.log(d)
         let data: any[] = []
         d.forEach(point => {
+          // todo +double
           data.push({time: +point[0] as UTCTimestamp, value: +point[1] | 0})
         } )
-        smaLineOnTop.setData(data)
+        smaLineFirst.setData(data)
+      }
+    );
+
+    this.http.get<any[]>('/be/indicator/short/0').subscribe(
+      // this.http.get<any[]>('/indicator/long/0').subscribe(
+      d => {
+        console.log("indicator")
+        console.log(d)
+        let data: any[] = []
+        d.forEach(point => {
+          // todo +double
+          data.push({time: +point[0] as UTCTimestamp, value: +point[1] | 0})
+        } )
+        smaLineSecond.setData(data)
       }
     );
 

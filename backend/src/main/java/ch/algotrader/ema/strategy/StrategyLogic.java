@@ -16,8 +16,8 @@ import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.CrossedDownIndicatorRule;
+import org.ta4j.core.rules.CrossedUpIndicatorRule;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -28,7 +28,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.lang.System.lineSeparator;
@@ -59,6 +61,8 @@ public class StrategyLogic implements InitializingBean {
     @Value("${emaPeriodShort}") private int emaPeriodShort;
     @Value("${emaPeriodLong}") private int emaPeriodLong;
 
+    private final List<String[]> signals = new ArrayList<>();
+
     private final TradingService tradingService;
 //    private DifferenceIndicator emaDifference;
     private Strategy strategy;
@@ -79,12 +83,10 @@ public class StrategyLogic implements InitializingBean {
         EMAIndicator sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
         EMAIndicator lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
 
-        strategy = new BaseStrategy(
-                new OverIndicatorRule(sema, lema),
-                new UnderIndicatorRule(sema, lema)
-        );
+        CrossedUpIndicatorRule entryRule = new CrossedUpIndicatorRule(sema, lema);
+        CrossedDownIndicatorRule exitRule = new CrossedDownIndicatorRule(sema, lema);
+        strategy = new BaseStrategy(entryRule, exitRule);
     }
-
 
     public void handleTradeEvent(AggTradeEvent event) {
         if (this.series.getEndIndex() >= 0) {
@@ -183,14 +185,17 @@ public class StrategyLogic implements InitializingBean {
                 tradingService.sendOrder("sell", quantity, symbol);
             }
 */
-
-                if (strategy.shouldEnter(i)) {
+                if (strategy.shouldEnter(i)/* && strategy.isUnstableAt(i-1)*/) {
                     // buy
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
+                    ZonedDateTime endTime = series.getBar(i).getEndTime();
+                    signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "B"});
 //                tradingService.sendOrder("buy", quantity, symbol);
                 } else if (strategy.shouldExit(i)) {
                     //sell or close
                     logger.info("!!!!!!!! SELL !!!!!!!!!");
+                    ZonedDateTime endTime = series.getBar(i).getEndTime();
+                    signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "S"});
 //                tradingService.sendOrder("sell", quantity, symbol);
                 }
             }
@@ -294,4 +299,8 @@ public class StrategyLogic implements InitializingBean {
 //        return new BaseStrategy(new OverIndicatorRule(shortEma, longEma), new UnderIndicatorRule(shortEma, longEma));
 //    }
 
+
+    public List<String[]> getSignals() {
+        return signals;
+    }
 }

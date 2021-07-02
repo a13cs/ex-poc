@@ -23,10 +23,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.READ;
@@ -36,8 +33,11 @@ public class SeriesService {
 
     private static final Logger logger = LoggerFactory.getLogger(SeriesService.class);
 
-    @Value("${emaRestBarCount}")
-    private Integer emaBarCount;
+    @Value("${emaPeriodLong}")
+    private Integer emaBarCountLong;
+
+    @Value("${emaPeriodShort}")
+    private Integer emaBarCountShort;
 
     @Value("${barDuration}")
     private Integer barDuration;
@@ -79,22 +79,26 @@ public class SeriesService {
         return Collections.emptyList();
     }
 
-    public List<List<String>> getIndicator(String indicatorName, String from, Path path) throws IOException {
+    public List<List<String>> getIndicator(String indicatorName, String from, Path path) {
         List<List<String>> indicatorValues = new ArrayList<>();
+
+        Integer emaCount = indicatorName.toLowerCase(Locale.ROOT).contains("long") ?
+                emaBarCountLong : emaBarCountShort;
 
         //  or use series from subscribed trades channel: strategyLogic.series
         BaseBarSeries series = getCsvSeries(indicatorName, from, path);
         ClosePriceIndicator close = new ClosePriceIndicator(series);
-        EMAIndicator ema = new EMAIndicator(close, emaBarCount);
+        EMAIndicator ema = new EMAIndicator(close, emaCount);
 
         List<Bar> barData = series.getBarData();
-        for(int i = emaBarCount/2; i < barData.size() ; i++) {
+        for(int i = emaCount/3; i < barData.size() ; i++) {
             Bar b = barData.get(i);
 
             Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
             String beginTime = String.valueOf(micro.getEpochSecond());
 
             Num value = close.getValue(i);
+//            if (value.isZero()) continue;
             try {
                 value = ema.getValue(i);
             } catch (Exception e) {
@@ -157,6 +161,12 @@ public class SeriesService {
 
     public List<List<String>> getPositions(String from, Path path) {
         return Collections.emptyList();
+    }
+
+    public List<List<String>> getSignals(String from) {
+        return strategyLogic.getSignals()
+                .stream()/*.filter(s -> Long.parseLong(s[0]) > Long.parseLong(from))*/
+                .map(Arrays::asList).collect(Collectors.toList());
     }
 
     // todo: get latest bars from in memory series
