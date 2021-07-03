@@ -158,10 +158,6 @@ public class SeriesService {
         return series;
     }
 
-    public List<List<String>> getPositions(String from, Path path) {
-        return Collections.emptyList();
-    }
-
     public List<List<String>> getSignals(String from) {
         return strategyLogic.getSignals()
                 .stream()/*.filter(s -> Long.parseLong(s[0]) > Long.parseLong(from))*/

@@ -33,6 +33,7 @@ public class EmaRest {
 
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
+    // todo: use csv series only for back testing
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
     public List<List<String>> latestBars(@PathVariable(value = "from") String from) throws IOException {
         String fileName = String.format(FILE_NAME, barDuration);
@@ -44,12 +45,6 @@ public class EmaRest {
     public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) throws IOException {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
-    }
-
-    // todo
-    @RequestMapping(method = RequestMethod.GET, path = "/bars/positions/{from}")
-    public List<List<String>> latestPositions(@PathVariable(value = "from") String from) {
-        return seriesService.getPositions(from, Paths.get(FILE_NAME));
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/signals/{from}")
