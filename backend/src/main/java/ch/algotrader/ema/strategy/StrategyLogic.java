@@ -196,13 +196,13 @@ public class StrategyLogic implements InitializingBean {
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "B"});
-//                tradingService.sendOrder("buy", quantity, symbol);
+//                    tradingService.sendOrder("buy", quantity, symbol);
                 } else if (strategy.shouldExit(i)) {
                     //sell or close
                     logger.info("!!!!!!!! SELL !!!!!!!!!");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "S"});
-//                tradingService.sendOrder("sell", quantity, symbol);
+//                    tradingService.sendOrder("sell", quantity, symbol);
                 }
             }
         } catch(Exception e) {

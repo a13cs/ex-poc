@@ -1,6 +1,7 @@
 package ch.algotrader.ema.rest;
 
 import ch.algotrader.ema.strategy.SeriesService;
+import ch.algotrader.ema.vo.AccResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,5 +53,10 @@ public class EmaRest {
     }
 
     // todo: acc info
+    @RequestMapping(method = RequestMethod.GET, path = "/acc")
+    public AccResponse accInfo() {
+//        return accService.getInfo();
+        return null;
+    }
 
 }

@@ -85,6 +85,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     }
 
     public void subscribeTrades(String topic) {
+
         if(isNotBlank(topic)) this.topic = topic;
         if (initCsv) {
             Path path = Paths.get(String.format(FILE_NAME, barDuration));
