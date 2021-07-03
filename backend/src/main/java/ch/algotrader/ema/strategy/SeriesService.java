@@ -98,7 +98,6 @@ public class SeriesService {
             String beginTime = String.valueOf(micro.getEpochSecond());
 
             Num value = close.getValue(i);
-//            if (value.isZero()) continue;
             try {
                 value = ema.getValue(i);
             } catch (Exception e) {

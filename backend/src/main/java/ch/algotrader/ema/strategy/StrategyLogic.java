@@ -18,6 +18,8 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -86,6 +88,10 @@ public class StrategyLogic implements InitializingBean {
         CrossedUpIndicatorRule entryRule = new CrossedUpIndicatorRule(sema, lema);
         CrossedDownIndicatorRule exitRule = new CrossedDownIndicatorRule(sema, lema);
         strategy = new BaseStrategy(entryRule, exitRule);
+//        strategy = new BaseStrategy(
+//                new OverIndicatorRule(sema, lema),
+//                new UnderIndicatorRule(sema, lema)
+//        );
     }
 
     public void handleTradeEvent(AggTradeEvent event) {
@@ -185,7 +191,7 @@ public class StrategyLogic implements InitializingBean {
                 tradingService.sendOrder("sell", quantity, symbol);
             }
 */
-                if (strategy.shouldEnter(i)/* && strategy.isUnstableAt(i-1)*/) {
+                if (strategy.shouldEnter(i)) {
                     // buy
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
@@ -210,7 +216,7 @@ public class StrategyLogic implements InitializingBean {
         if(i < 1) return;
         Bar bar = series.getBar(i);
 
-        if (bar.getTrades() == 0 ) return;
+//        if (bar.getTrades() == 0 ) return;
 
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
