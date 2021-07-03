@@ -1,7 +1,9 @@
 package ch.algotrader.ema.rest;
 
+import ch.algotrader.ema.services.AccService;
 import ch.algotrader.ema.strategy.SeriesService;
 import ch.algotrader.ema.vo.AccResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,9 @@ public class EmaRest {
 
     @Autowired
     SeriesService seriesService;
+
+    @Autowired
+    AccService accService;
 
     private static final String FILE_NAME = "bnc_trades_%ss.csv";
 
@@ -52,11 +57,9 @@ public class EmaRest {
         return seriesService.getSignals(from);
     }
 
-    // todo: acc info
     @RequestMapping(method = RequestMethod.GET, path = "/acc")
-    public AccResponse accInfo() {
-//        return accService.getInfo();
-        return null;
+    public AccResponse accInfo() throws JsonProcessingException {
+        return accService.getInfo();
     }
 
 }

@@ -1,7 +1,7 @@
 package ch.algotrader.ema.strategy;
 
 import ch.algotrader.ema.rest.model.BarModel;
-import ch.algotrader.ema.services.TradingService;
+import ch.algotrader.ema.services.AccService;
 import ch.algotrader.ema.ws.model.AggTradeEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -18,8 +18,6 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
 import org.ta4j.core.rules.CrossedUpIndicatorRule;
-import org.ta4j.core.rules.OverIndicatorRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -65,7 +63,7 @@ public class StrategyLogic implements InitializingBean {
 
     private final List<String[]> signals = new ArrayList<>();
 
-    private final TradingService tradingService;
+    private final AccService accService;
 //    private DifferenceIndicator emaDifference;
     private Strategy strategy;
 
@@ -74,8 +72,8 @@ public class StrategyLogic implements InitializingBean {
     private Integer csvBarCount = 0;
 
     @Autowired
-    public StrategyLogic(TradingService tradingService) {
-        this.tradingService = tradingService;
+    public StrategyLogic(AccService accService) {
+        this.accService = accService;
         this.series = new BaseBarSeriesBuilder().withName("bnc_series").build();
     }
 
@@ -196,13 +194,13 @@ public class StrategyLogic implements InitializingBean {
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "B"});
-//                    tradingService.sendOrder("buy", quantity, symbol);
+                    accService.sendOrder("buy", quantity, symbol);
                 } else if (strategy.shouldExit(i)) {
                     //sell or close
                     logger.info("!!!!!!!! SELL !!!!!!!!!");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "S"});
-//                    tradingService.sendOrder("sell", quantity, symbol);
+                    accService.sendOrder("sell", quantity, symbol);
                 }
             }
         } catch(Exception e) {

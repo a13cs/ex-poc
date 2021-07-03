@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.DisposableBean;
@@ -23,16 +22,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BaseBarSeries;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.UnresolvedAddressException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.HashMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -170,25 +165,6 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 //            SpringApplication.exit(context);
         }
         return false;
-    }
-
-    private String createSignature(ChannelSubscription subscription) throws JsonProcessingException {
-        String inputText = new ObjectMapper().writeValueAsString(subscription);
-        return createHmacSignature(apiSecret, inputText, "HmacSHA256");
-    }
-
-    private String createHmacSignature(String secret, String inputText, String algoName) {
-        try {
-            Mac mac = Mac.getInstance(algoName);
-            SecretKeySpec key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), algoName);
-            mac.init(key);
-
-            String payload = Base64.getEncoder().encodeToString(inputText.getBytes());
-            return new String(Hex.encodeHex(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8))));
-
-        } catch (Exception e) {
-            throw new RuntimeException("cannot create " + algoName, e);
-        }
     }
 
 }

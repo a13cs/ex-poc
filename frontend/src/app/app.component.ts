@@ -10,6 +10,8 @@ import {HttpClient} from "@angular/common/http";
 export class AppComponent implements OnInit {
   title = 'app';
 
+  balance = {};
+
   constructor(private http: HttpClient) {
   }
 
@@ -95,6 +97,7 @@ export class AppComponent implements OnInit {
       lineWidth: 2,
     });
 
+    //  ===============================================================================
 
     // load data
 
@@ -127,6 +130,7 @@ export class AppComponent implements OnInit {
       })
 
     this.http.get<any[]>('/be/signals/0').subscribe( d => {
+    // this.http.get<any[]>('/signals/0').subscribe( d => {
       console.log(d)
 
       let signals: any[] = d.map(s => {
@@ -142,9 +146,6 @@ export class AppComponent implements OnInit {
       series.setMarkers(signals)
     })
 
-      // todo: default be config (duration, ema length)
-
-    // this.http.get<any[]>('assets/ema_time_close.json').subscribe(
     this.http.get<any[]>('/be/indicator/long/0').subscribe(
     // this.http.get<any[]>('/indicator/long/0').subscribe(
       d => {
@@ -159,7 +160,7 @@ export class AppComponent implements OnInit {
     );
 
     this.http.get<any[]>('/be/indicator/short/0').subscribe(
-      // this.http.get<any[]>('/indicator/long/0').subscribe(
+      // this.http.get<any[]>('/indicator/short/0').subscribe(
       d => {
         console.log("indicator")
         console.log(d)
@@ -171,6 +172,18 @@ export class AppComponent implements OnInit {
         smaLineSecond.setData(data)
       }
     );
+
+    // todo
+    this.http.get<any[]>('/be/acc').subscribe(
+    // this.http.get<any[]>('/acc').subscribe(
+      d => {
+        // let data : any = Object.keys(d)
+        console.log("BTC SPOT Balance: " + JSON.stringify(d))
+        this.balance = d;
+      }
+    )
+
+
 
   }
 
