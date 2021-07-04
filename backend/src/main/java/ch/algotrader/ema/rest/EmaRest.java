@@ -2,14 +2,13 @@ package ch.algotrader.ema.rest;
 
 import ch.algotrader.ema.services.AccService;
 import ch.algotrader.ema.strategy.SeriesService;
-import ch.algotrader.ema.vo.AccResponse;
+import ch.algotrader.ema.vo.AccInfoResponse;
+import ch.algotrader.ema.vo.AccTradesResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -60,8 +59,13 @@ public class EmaRest {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/acc")
-    public AccResponse accInfo() throws JsonProcessingException {
+    public AccInfoResponse accInfo() throws JsonProcessingException {
         return accService.getInfo();
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/myTrades")
+    public List<AccTradesResponse> accTradesList() throws JsonProcessingException {
+        return accService.getAccTradesList();
     }
 
 }

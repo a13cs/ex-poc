@@ -204,6 +204,8 @@ public class StrategyLogic implements InitializingBean {
                     accService.sendOrder("sell", quantity, symbol);
                 }
             }
+        } catch (NullPointerException npe) {
+            //
         } catch(Exception e) {
             logger.error(e.getMessage(),e);
         }

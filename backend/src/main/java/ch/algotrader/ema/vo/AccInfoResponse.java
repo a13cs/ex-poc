@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class AccResponse {
+public class AccInfoResponse {
 
 //      GET /api/v3/account (HMAC SHA256)
 //      param: timestamp LONG
