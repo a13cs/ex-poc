@@ -102,8 +102,8 @@ export class AppComponent implements OnInit {
     // load data
 
     // this.http.get<any[]>('assets/bars.json').subscribe(
-    this.http.get<any[]>('/be/bars/csv/0').subscribe(
-      // this.http.get<any[]>('/bars/csv/0').subscribe(
+    this.http.get<any[]>('/be/bars/0').subscribe(
+      // this.http.get<any[]>('/bars/0').subscribe(
       d => {
         console.log(d.slice(1))
         console.log(d)
