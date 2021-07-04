@@ -26,8 +26,8 @@ public class EmaRest {
     @Value("${barDuration}")
     private int barDuration;
 
-    @Value("${initFromCsv}")
-    private boolean initFromCsv;
+//    @Value("${initFromCsv}")
+//    private boolean initFromCsv;
 
     @Autowired
     SeriesService seriesService;
@@ -40,10 +40,15 @@ public class EmaRest {
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
     // todo: use csv series only for back testing
-    @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
-    public List<List<String>> latestBars(@PathVariable(value = "from") String from) {
+    @RequestMapping(method = RequestMethod.GET, path = "/bars/csv/{from}")
+    public List<List<String>> latestCsvBars(@PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/bars")
+    public List<List<String>> latestBars() {
+        return seriesService.getLatestBars();
     }
 
     // {indicator} = short / long (ema)

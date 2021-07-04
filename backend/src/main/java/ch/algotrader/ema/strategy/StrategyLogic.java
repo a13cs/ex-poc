@@ -67,7 +67,8 @@ public class StrategyLogic implements InitializingBean {
 //    private DifferenceIndicator emaDifference;
     private Strategy strategy;
 
-    private final BarSeries series;
+    /*private final*/ BaseBarSeries series;
+
     private ClosePriceIndicator closePriceIndicator;
     private Integer csvBarCount = 0;
 
@@ -104,7 +105,7 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    // todo: start on demand jobs by barDuration  + sse
+    // TODO : start on demand jobs by barDuration  + sse/ws
     @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {
         synchronized (series) {

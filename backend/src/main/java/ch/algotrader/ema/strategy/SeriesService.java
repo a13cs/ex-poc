@@ -1,10 +1,17 @@
 package ch.algotrader.ema.strategy;
 
+import ch.algotrader.ema.rest.model.BarModel;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.annotation.ApplicationScope;
 import org.ta4j.core.Bar;
 import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseBarSeries;
@@ -28,10 +35,20 @@ import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.READ;
 
+@ApplicationScope
 @Service
 public class SeriesService {
 
     private static final Logger logger = LoggerFactory.getLogger(SeriesService.class);
+
+    private static final ObjectMapper OM = new ObjectMapper();
+
+    static {
+        OM.findAndRegisterModules();
+
+        OM.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        OM.configure(SerializationFeature.INDENT_OUTPUT, true);
+    }
 
     @Value("${emaPeriodLong}")
     private Integer emaBarCountLong;
@@ -44,6 +61,29 @@ public class SeriesService {
 
     @Autowired
     private StrategyLogic strategyLogic;
+
+    public List<List<String>> getLatestBars() {
+        BaseBarSeries barSeries = strategyLogic.series;
+
+        return barSeries.getBarData().stream().map(b -> {
+
+            List<String> bar = new ArrayList<>();
+            try {
+                String stringBar = OM.writeValueAsString(BarModel.fromBar(b));
+                HashMap<String, String> barMap = OM.readValue(stringBar, new TypeReference<>(){} );
+
+//                logger.info("bar keys {}", barMap.keySet());
+//                logger.info("bar values {}", barMap.values());
+
+                bar = new ArrayList<>(barMap.values());
+
+            } catch (JsonProcessingException e) {
+                logger.error("Could not get runtime bar series.", e);
+            }
+            return bar;
+
+        }).collect(Collectors.toList());
+    }
 
     public List<List<String>> getLatestCSVBars(String index, Path path) /*throws IOException*/ {
         long from = Long.parseLong(index);
@@ -79,6 +119,7 @@ public class SeriesService {
         return Collections.emptyList();
     }
 
+    // add CSV flag
     public List<List<String>> getIndicator(String indicatorName, String from, Path path) {
         List<List<String>> indicatorValues = new ArrayList<>();
 
@@ -87,6 +128,7 @@ public class SeriesService {
 
         //  or use series from subscribed trades channel: strategyLogic.series
         BaseBarSeries series = getCsvSeries(indicatorName, from, path);
+//        BaseBarSeries series = strategyLogic.series;
         ClosePriceIndicator close = new ClosePriceIndicator(series);
         EMAIndicator ema = new EMAIndicator(close, emaCount);
 
