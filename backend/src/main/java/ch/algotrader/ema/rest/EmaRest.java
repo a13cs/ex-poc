@@ -8,20 +8,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
 
+// todo: use sse/ws for online bars
+//@ConditionalOnExpression(value = "${initFromCsv:true}")
+//@ConditionalOnProperty(name = "initFromCsv", havingValue = "true")
 @RestController
 public class EmaRest {
 
     @Value("${barDuration}")
     private int barDuration;
+
+    @Value("${initFromCsv}")
+    private boolean initFromCsv;
 
     @Autowired
     SeriesService seriesService;
@@ -35,14 +42,14 @@ public class EmaRest {
 
     // todo: use csv series only for back testing
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
-    public List<List<String>> latestBars(@PathVariable(value = "from") String from) throws IOException {
+    public List<List<String>> latestBars(@PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
 
     // todo
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{name}/{from}")
-    public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) throws IOException {
+    public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
     }

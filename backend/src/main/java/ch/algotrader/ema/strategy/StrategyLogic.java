@@ -104,7 +104,7 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    // todo: start on demand jobs by fix barDuration (or some series) + sse
+    // todo: start on demand jobs by barDuration  + sse
     @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {
         synchronized (series) {
