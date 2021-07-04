@@ -40,7 +40,7 @@ public class AccService {
     private static final Logger logger = LoggerFactory.getLogger(AccService.class);
 
     private static final String HMAC_SHA_256 = "HmacSHA256";
-    private static final int ACC_TRADES_LIMIT = 20;
+    private static final int ACC_TRADES_LIMIT = 10;
     private static final String MARKET = "MARKET";
     private static final String RESULT = "RESULT";
 
@@ -78,10 +78,9 @@ public class AccService {
 
         List<AccTradesResponse> trades = accTradesResponses.stream()
                 .peek(t -> t.setDisplayTime(
-                        LocalDateTime.ofInstant(
-                                Instant.ofEpochMilli(t.getTime()), ZoneId.systemDefault()).toString() )
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(t.getTime()), ZoneId.systemDefault()))
                 )
-                .sorted(Comparator.comparing(AccTradesResponse::getTime))
+                .sorted(Comparator.comparingLong(AccTradesResponse::getTime).reversed())
                 .limit(ACC_TRADES_LIMIT)
                 .collect(Collectors.toList());
 
@@ -118,6 +117,7 @@ public class AccService {
     }
 
     public void sendOrder(String side, BigDecimal quantity, String symbol) {
+        // if initFromCsv return
         long time = new Date().getTime();
 
         final UriComponents pathUri = UriComponentsBuilder.fromUriString("order").build();

@@ -3,6 +3,7 @@ package ch.algotrader.ema.vo;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Data
 public class AccTradesResponse {
@@ -17,7 +18,7 @@ public class AccTradesResponse {
     private Double commission;// "10.10000000",
     private String commissionAsset;// "BNB",
     private Long time;// 1499865549590,
-    private String displayTime;// 1499865549590,
+    private LocalDateTime displayTime;
     private Boolean isBuyer;// true,
     private Boolean isMaker;// false,
     private Boolean isBestMatch;// true

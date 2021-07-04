@@ -46,13 +46,14 @@ public class EmaRest {
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
 
-    // todo
-    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{name}/{from}")
-    public List<List<String>> latestIndicators(@PathVariable(value = "name") String indicator, @PathVariable(value = "from") String from) {
+    // {indicator} = short / long (ema)
+    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}/{from}")
+    public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
     }
 
+    // todo: use from
     @RequestMapping(method = RequestMethod.GET, path = "/signals/{from}")
     public List<List<String>> latestSignals(@PathVariable(value = "from") String from) {
         return seriesService.getSignals(from);
