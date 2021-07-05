@@ -179,7 +179,7 @@ export class AppComponent implements OnInit {
     })
 
 
-    // todo
+/*  // todo
     this.http.get<any[]>('/be/acc').subscribe(
     // this.http.get<any[]>('/acc').subscribe(
       d => {
@@ -188,7 +188,7 @@ export class AppComponent implements OnInit {
         this.balance = d;
       }
     )
-
+*/
 
 
   }

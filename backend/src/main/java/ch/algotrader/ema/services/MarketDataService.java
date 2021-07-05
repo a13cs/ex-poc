@@ -70,6 +70,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     @Value("${barDuration}")
     private int barDuration;
+    private static final double MIN_QUANTITY_LIMIT = 0.005;
 
 
     @Autowired
@@ -127,14 +128,17 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
             if ("trade".equals(map.get("e"))) {
 //                LOGGER.info("msg {}", msg);
-
                 LOGGER.info(System.lineSeparator());
+
+                double quantity = Math.abs(Double.parseDouble(map.get("q")));
+                if(quantity < MIN_QUANTITY_LIMIT) {
+                    LOGGER.warn("Skipped trade with low quantity {}, price {}", map.get("q"), map.get("p"));
+                    return;
+                }
                 map.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
 
 //                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));  // or send map
                 strategyLogic.handleTradeEvent(map);
-            } else if (map.get("result") != null) {
-                LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}", ChannelSubscription.trades(topic), msg);
             }
         } catch (JsonProcessingException jpe) {
             // ignore

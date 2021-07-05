@@ -128,10 +128,12 @@ public class SeriesService {
         List<Bar> barData = series.getBarData();
         for(int i = 1; i < barData.size() ; i++) {
             Num value = close.getValue(i);
-            try {
-                value = ema.getValue(i);
-            } catch (Exception e) {
-                logger.debug("EMAIndicator error at index " + i, e);
+            if(i > emaBarCountLong) {
+                try {
+                    value = ema.getValue(i);
+                } catch (Exception e) {
+                    logger.debug("EMAIndicator error at index " + i, e);
+                }
             }
 
             double val = value.doubleValue();
