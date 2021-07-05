@@ -5,7 +5,6 @@ import ch.algotrader.ema.strategy.SeriesService;
 import ch.algotrader.ema.strategy.StrategyLogic;
 import ch.algotrader.ema.ws.JSONTextDecoder;
 import ch.algotrader.ema.ws.JSONTextEncoder;
-import ch.algotrader.ema.ws.model.AggTradeEvent;
 import ch.algotrader.ema.ws.model.ChannelSubscription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -126,11 +125,14 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         try {
             HashMap<String, String> map = MAPPER.readValue( msg, new TypeReference<>(){} );
 
-            if (map.get("id") == null && "aggTrade".equals(map.get("e"))) {
+            if ("trade".equals(map.get("e"))) {
 //                LOGGER.info("msg {}", msg);
-//                map.forEach((k,v) -> LOGGER.info("key::{}  value::{}",k,v));
 
-                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));
+                LOGGER.info(System.lineSeparator());
+                map.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
+
+//                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));  // or send map
+                strategyLogic.handleTradeEvent(map);
             } else if (map.get("result") != null) {
                 LOGGER.warn("Could not subscribe to exchange with {}. Resp: {}", ChannelSubscription.trades(topic), msg);
             }
@@ -155,7 +157,8 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         Session ssn;
         WebSocketContainer container = ContainerProvider.getWebSocketContainer();
         try {
-            ssn = container.connectToServer(this, URI.create(wsUrl + "btcusdt" + "@aggTrade"));
+//            ssn = container.connectToServer(this, URI.create(wsUrl + "btcusdt" + "@aggTrade"));
+            ssn = container.connectToServer(this, URI.create(wsUrl + "btcusdt" + "@trade"));
             LOGGER.info("session open: " + ssn.isOpen());
 
             this.session = ssn;

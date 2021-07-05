@@ -5,7 +5,6 @@ import lombok.Data;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 
@@ -17,17 +16,14 @@ public class ChannelSubscription {
     private List<String> params;
     private Integer id;
 
-//    private long timestamp;
-//    private String signature;
-
     public static ChannelSubscription trades(String pair) {
         return ChannelSubscription.builder()
                 .method("SUBSCRIBE")
                 .params(Arrays.asList(
-                        pair + "@aggTrade",
+//                        pair + "@aggTrade",
+                        pair + "@trade",
                         pair + "@depth"))
                 .id(new Random(Instant.now().toEpochMilli()).nextInt(100))
-//                .timestamp(Instant.now().toEpochMilli())
                 .build();
     }
 

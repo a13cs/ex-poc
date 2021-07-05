@@ -5,10 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BaseBar;
-import org.ta4j.core.BaseBarSeries;
-import org.ta4j.core.BaseBarSeriesBuilder;
+import org.ta4j.core.*;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.Num;
@@ -87,16 +84,49 @@ public class SeriesService {
 
         //  or use series from subscribed trades channel: strategyLogic.series
         BaseBarSeries series = getCsvSeries(indicatorName, from, path);
+//        BarSeries series = strategyLogic.series;
         ClosePriceIndicator close = new ClosePriceIndicator(series);
         EMAIndicator ema = new EMAIndicator(close, emaCount);
 
         List<Bar> barData = series.getBarData();
-        for(int i = emaCount/3; i < barData.size() ; i++) {
+        for(int i = 1; i < barData.size() ; i++) {
             Bar b = barData.get(i);
 
             Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
             String beginTime = String.valueOf(micro.getEpochSecond());
 
+            Num value = close.getValue(i);
+//            if(i > emaCount/2) {
+                try {
+                    value = ema.getValue(i);
+                } catch (Exception e) {
+                    logger.warn("EMAIndicator error at index " + i, e);
+                }
+//            }
+
+            double val = value.doubleValue();
+            long truncated = (long) val;
+            long micros = Math.round((val - truncated) * 1_000_000);
+            String emaValue  = truncated + "." + micros;
+
+            indicatorValues.add(Arrays.asList(beginTime, emaValue));
+        }
+        return indicatorValues;
+    }
+
+    public List<String> getRuntimeIndicator(String indicatorName) {
+        List<String> indicatorValues = new ArrayList<>();
+
+//        Integer emaCount = indicatorName.toLowerCase(Locale.ROOT).contains("long") ?
+//                emaBarCountLong : emaBarCountShort;
+
+        BarSeries series = strategyLogic.series;
+        EMAIndicator ema = indicatorName.toLowerCase(Locale.ROOT).contains("long") ? strategyLogic.lema : strategyLogic.sema;
+        ClosePriceIndicator close = new ClosePriceIndicator(series);
+//        EMAIndicator ema = new EMAIndicator(close, emaCount);
+
+        List<Bar> barData = series.getBarData();
+        for(int i = 1; i < barData.size() ; i++) {
             Num value = close.getValue(i);
             try {
                 value = ema.getValue(i);
@@ -109,7 +139,7 @@ public class SeriesService {
             long micros = Math.round((val - truncated) * 1_000_000);
             String emaValue  = truncated + "." + micros;
 
-            indicatorValues.add(Arrays.asList(beginTime, emaValue));
+            indicatorValues.add(emaValue);
         }
         return indicatorValues;
     }

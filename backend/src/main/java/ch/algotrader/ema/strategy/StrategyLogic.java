@@ -2,7 +2,6 @@ package ch.algotrader.ema.strategy;
 
 import ch.algotrader.ema.rest.model.BarModel;
 import ch.algotrader.ema.services.AccService;
-import ch.algotrader.ema.ws.model.AggTradeEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -67,7 +66,11 @@ public class StrategyLogic implements InitializingBean {
 //    private DifferenceIndicator emaDifference;
     private Strategy strategy;
 
-    private final BarSeries series;
+    /*private final*/ BarSeries series;
+    EMAIndicator sema;
+    EMAIndicator lema;
+
+
     private ClosePriceIndicator closePriceIndicator;
     private Integer csvBarCount = 0;
 
@@ -80,8 +83,8 @@ public class StrategyLogic implements InitializingBean {
     @Override
     public void afterPropertiesSet() {
         closePriceIndicator = new ClosePriceIndicator(series);
-        EMAIndicator sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
-        EMAIndicator lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
+        sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
+        lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
 
         CrossedUpIndicatorRule entryRule = new CrossedUpIndicatorRule(sema, lema);
         CrossedDownIndicatorRule exitRule = new CrossedDownIndicatorRule(sema, lema);
@@ -92,11 +95,11 @@ public class StrategyLogic implements InitializingBean {
 //        );
     }
 
-    public void handleTradeEvent(AggTradeEvent event) {
+    public void handleTradeEvent(Map<String, String> map) {
         if (this.series.getEndIndex() >= 0) {
             synchronized (series) {
-                double amount = Math.abs(Double.parseDouble(event.getQuantity()));
-                double price  = Math.abs(Double.parseDouble(event.getPrice()));
+                double amount = Math.abs(Double.parseDouble(map.get("q")));
+                double price  = Math.abs(Double.parseDouble(map.get("p")));
                 if (price > 0) {
                     series.addTrade(amount, price);
                 }
@@ -195,13 +198,13 @@ public class StrategyLogic implements InitializingBean {
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "B"});
-                    accService.sendOrder("buy", quantity, symbol);
+//                    accService.sendOrder("buy", quantity, symbol);
                 } else if (strategy.shouldExit(i)) {
                     //sell or close
                     logger.info("!!!!!!!! SELL !!!!!!!!!");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "S"});
-                    accService.sendOrder("sell", quantity, symbol);
+//                    accService.sendOrder("sell", quantity, symbol);
                 }
             }
         } catch (NullPointerException npe) {

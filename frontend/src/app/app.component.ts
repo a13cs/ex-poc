@@ -127,6 +127,38 @@ export class AppComponent implements OnInit {
         series.setData(data);
 
         closeLine.setData(lineData)
+
+        this.http.get<any[]>('/be/indicator/long/0').subscribe(
+          // this.http.get<any[]>('/indicator/long').subscribe(
+          d => {
+            console.log(d)
+            d = d.map(i => i[1] )
+
+            let indicatorData: any[] = []
+            for (let i = 1; i < data.length; i++) {
+              indicatorData.push({time: +data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | data[i].close})
+            }
+            // d.forEach(point => {
+            //   indicatorData.push({time: +point[0] as UTCTimestamp, value: +point[0] | 0})
+            // } )
+            smaLineFirst.setData(indicatorData)
+          }
+        );
+
+        this.http.get<any[]>('/be/indicator/short/0').subscribe(
+          // this.http.get<any[]>('/indicator/short').subscribe(
+          d => {
+            console.log(d)
+            d = d.map(i => i[1] )
+
+            let indicatorData: any[] = []
+            for (let i = 1; i < data.length; i++) {
+              indicatorData.push({time: +data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | data[i].close})
+            }
+            smaLineSecond.setData(indicatorData)
+          }
+        );
+
       })
 
     this.http.get<any[]>('/be/signals/0').subscribe( d => {
@@ -146,32 +178,6 @@ export class AppComponent implements OnInit {
       series.setMarkers(signals)
     })
 
-    this.http.get<any[]>('/be/indicator/long/0').subscribe(
-    // this.http.get<any[]>('/indicator/long/0').subscribe(
-      d => {
-        console.log(d)
-        let data: any[] = []
-        d.forEach(point => {
-          // todo +double
-          data.push({time: +point[0] as UTCTimestamp, value: +point[1] | 0})
-        } )
-        smaLineFirst.setData(data)
-      }
-    );
-
-    this.http.get<any[]>('/be/indicator/short/0').subscribe(
-      // this.http.get<any[]>('/indicator/short/0').subscribe(
-      d => {
-        console.log("indicator")
-        console.log(d)
-        let data: any[] = []
-        d.forEach(point => {
-          // todo +double
-          data.push({time: +point[0] as UTCTimestamp, value: +point[1] | 0})
-        } )
-        smaLineSecond.setData(data)
-      }
-    );
 
     // todo
     this.http.get<any[]>('/be/acc').subscribe(

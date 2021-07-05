@@ -45,12 +45,18 @@ public class EmaRest {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getLatestCSVBars(from, Paths.get(fileName));
     }
+    //todo: add local run trading report
 
     // {indicator} = short / long (ema)
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}/{from}")
     public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}")
+    public List<String> latestRuntimeIndicator(@PathVariable(value = "indicator") String indicatorName) {
+        return seriesService.getRuntimeIndicator(indicatorName);
     }
 
     // todo: use from
