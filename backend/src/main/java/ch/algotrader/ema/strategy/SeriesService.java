@@ -100,7 +100,7 @@ public class SeriesService {
                 try {
                     value = ema.getValue(i);
                 } catch (Exception e) {
-                    logger.warn("EMAIndicator error at index " + i, e);
+                    logger.debug("EMAIndicator error at index " + i, e);
                 }
 //            }
 
@@ -131,7 +131,7 @@ public class SeriesService {
             try {
                 value = ema.getValue(i);
             } catch (Exception e) {
-                logger.warn("EMAIndicator error at index " + i, e);
+                logger.debug("EMAIndicator error at index " + i, e);
             }
 
             double val = value.doubleValue();

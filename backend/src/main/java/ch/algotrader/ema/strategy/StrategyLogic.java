@@ -5,6 +5,7 @@ import ch.algotrader.ema.services.AccService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -43,6 +44,7 @@ public class StrategyLogic implements InitializingBean {
     private static final ObjectMapper mapper = new ObjectMapper();
     static {
         mapper.findAndRegisterModules();
+        mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
     @Value("${barDuration}")
@@ -105,6 +107,7 @@ public class StrategyLogic implements InitializingBean {
                 }
             }
         }
+        // TODO: alt: create range bar, no cron
     }
 
     // todo: start on demand jobs by barDuration  + sse
