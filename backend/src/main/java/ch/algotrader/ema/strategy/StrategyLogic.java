@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -46,6 +47,8 @@ public class StrategyLogic implements InitializingBean {
         mapper.findAndRegisterModules();
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
+
+    private static final String TRADES_CSV = "trades_start@s" + Instant.now().getEpochSecond() + ".csv";
 
     @Value("${barDuration}")
     private int barDuration;
@@ -97,16 +100,19 @@ public class StrategyLogic implements InitializingBean {
 //        );
     }
 
-    public void handleTradeEvent(Map<String, String> map) {
+    public void handleTradeEvent(Map<String, String> message) {
         if (this.series.getEndIndex() >= 0) {
             synchronized (series) {
-                double amount = Math.abs(Double.parseDouble(map.get("q")));
-                double price  = Math.abs(Double.parseDouble(map.get("p")));
+                double amount = Math.abs(Double.parseDouble(message.get("q")));
+                double price  = Math.abs(Double.parseDouble(message.get("p")));
                 if (price > 0) {
                     series.addTrade(amount, price);
                 }
             }
         }
+        // save trades to csv (p,q,T) use T
+        writeToFile(TRADES_CSV, message);
+
         // TODO: alt: create range bar, no cron
     }
 
@@ -124,7 +130,7 @@ public class StrategyLogic implements InitializingBean {
                 if(saveToCsv) saveBarToCSV();
                 createNewBar();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("onTime: ", e);
             }
         }
     }
@@ -217,26 +223,30 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    private void saveBarToCSV() {
+    private void saveBarToCSV() throws JsonProcessingException {
         String fileName = "bnc_trades_" + barDuration + "s.csv";
         int i = series.getEndIndex();
         if(i < 1) return;
         Bar bar = series.getBar(i);
 
-//        if (bar.getTrades() == 0 ) return;
+        BarModel barModel = BarModel.fromBar(bar);
+        Map<String, String> barFields =
+            mapper.readValue(
+                    mapper.writeValueAsString(barModel),
+                    new TypeReference<LinkedHashMap<String, String>>() { }
+                );
+
+        writeToFile(fileName, barFields);
+    }
+
+    private void writeToFile(String fileName, Map<String, String> fields) {
 
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
 
-            BarModel barModel = BarModel.fromBar(bar);
-            Map<String, String> barFields =
-                    mapper.readValue(
-                            mapper.writeValueAsString(barModel),
-                            new TypeReference<LinkedHashMap<String, String>>() { }
-                    );
-//            values.forEach(logger::info);
-            String keys = String.join(",", barFields.keySet());
-            String values = String.join(",", barFields.values());
+//            fields.forEach(logger::info);
+            String keys = String.join(",", fields.keySet());
+            String values = String.join(",", fields.values());
 
             InputStream inputStream = Files.newInputStream(Paths.get(fileName), READ);
             int inputLength = inputStream.readAllBytes().length;
@@ -246,6 +256,7 @@ public class StrategyLogic implements InitializingBean {
                 byte[] buffer = new byte[keysLength];  // keep new
 
                 System.arraycopy(keys.getBytes(UTF_8), 0, buffer, 0, keysLength);
+//                out.write(keys.getBytes(UTF_8));
                 out.write(buffer);
                 out.write(newLine, 0, newLine.length);
             }

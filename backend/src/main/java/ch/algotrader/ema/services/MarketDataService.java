@@ -27,6 +27,7 @@ import java.net.URI;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -124,21 +125,28 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @OnMessage
     public void onMessage(Session session, String msg) {
         try {
-            HashMap<String, String> map = MAPPER.readValue( msg, new TypeReference<>(){} );
+            HashMap<String, String> filteredMessage = new HashMap<>();
+            HashMap<String, String> mapMessage = MAPPER.readValue( msg, new TypeReference<>(){} );
 
-            if ("trade".equals(map.get("e"))) {
+            mapMessage.forEach((k,v) -> {
+                if(Arrays.asList("q","p","T").contains(k)){
+                    filteredMessage.putIfAbsent(k,v);
+                }
+            });
+
+            if ("trade".equals(mapMessage.get("e"))) {
 //                LOGGER.info("msg {}", msg);
                 LOGGER.info(System.lineSeparator());
 
-                double quantity = Math.abs(Double.parseDouble(map.get("q")));
+                double quantity = Math.abs(Double.parseDouble(filteredMessage.get("q")));
                 if(quantity < MIN_QUANTITY_LIMIT) {
-                    LOGGER.warn("Skipped trade with low quantity {}, price {}", map.get("q"), map.get("p"));
+                    LOGGER.warn("Skipped trade with low quantity {}, price {}", filteredMessage.get("q"), filteredMessage.get("p"));
                     return;
                 }
-                map.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
+                mapMessage.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
 
-//                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(map));  // or send map
-                strategyLogic.handleTradeEvent(map);
+//                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(mapMessage));  // or send mapMessage
+                strategyLogic.handleTradeEvent(filteredMessage);
             }
         } catch (JsonProcessingException jpe) {
             // ignore
