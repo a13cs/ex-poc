@@ -106,6 +106,9 @@ public class StrategyLogic implements InitializingBean {
             synchronized (series) {
                 double amount = Math.abs(Double.parseDouble(message.get("q")));
                 double price  = Math.abs(Double.parseDouble(message.get("p")));
+
+                if (amount < 0.003 && price > 100_000 && price < 10_000) return;
+
                 if (price > 0) {
                     series.addTrade(amount, price);
 
