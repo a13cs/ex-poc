@@ -68,16 +68,17 @@ public class StrategyLogic implements InitializingBean {
     private final List<String[]> signals = new ArrayList<>();
 
     private final AccService accService;
-//    private DifferenceIndicator emaDifference;
     private Strategy strategy;
 
-    /*private final*/ BarSeries series;
+    private final BarSeries series;
+
+    // todo: private
     EMAIndicator sema;
     EMAIndicator lema;
 
 
-    private ClosePriceIndicator closePriceIndicator;
     private Integer csvBarCount = 0;
+
 
     @Autowired
     public StrategyLogic(AccService accService) {
@@ -87,7 +88,7 @@ public class StrategyLogic implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() {
-        closePriceIndicator = new ClosePriceIndicator(series);
+        ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(series);
         sema = new EMAIndicator(closePriceIndicator, this.emaPeriodShort);
         lema = new EMAIndicator(closePriceIndicator, this.emaPeriodLong);
 
@@ -107,6 +108,16 @@ public class StrategyLogic implements InitializingBean {
                 double price  = Math.abs(Double.parseDouble(message.get("p")));
                 if (price > 0) {
                     series.addTrade(amount, price);
+
+                    // use trade timestamp 'T' instead, to avoid delayed trades
+                    // if T >= startTime + duration * barsCount -> new bar
+//                    int i = this.series.getEndIndex();
+//                    if (i >= 0) {
+//                        Bar previousBar = series.getBar(i);
+//                    }
+                    if (new BigDecimal(message.get("T")).longValue() >= series.getFirstBar().getBeginTime().toEpochSecond()) {
+                        createNewBar();
+                    }
                 }
             }
         }
@@ -116,8 +127,7 @@ public class StrategyLogic implements InitializingBean {
         // TODO alt: create range bar
     }
 
-    // todo: start on demand jobs by barDuration  + sse
-    // use trade timestamp 'T' instead, to avoid delayed trades
+
     @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {
         synchronized (series) {
@@ -128,8 +138,8 @@ public class StrategyLogic implements InitializingBean {
                 logBar();
                 evaluateLogic();
 
-                if(saveToCsv) saveBarToCSV();
-                createNewBar();
+//                if(saveToCsv) saveBarToCSV(null);
+//                createNewBar();
             } catch (Exception e) {
                 logger.error("onTime: ", e);
             }
@@ -224,11 +234,12 @@ public class StrategyLogic implements InitializingBean {
         }
     }
 
-    private void saveBarToCSV() throws JsonProcessingException {
+    private void saveBarToCSV(Bar b) throws JsonProcessingException {
         String fileName = "bnc_trades_" + barDuration + "s.csv";
+
         int i = series.getEndIndex();
         if(i < 1) return;
-        Bar bar = series.getBar(i);
+        Bar bar = b == null ? series.getBar(i) : b;
 
         BarModel barModel = BarModel.fromBar(bar);
         Map<String, String> barFields =
@@ -281,9 +292,16 @@ public class StrategyLogic implements InitializingBean {
         if (i >= 0) {
             Bar previousBar = series.getBar(i);
             newBar.addPrice(previousBar.getClosePrice());
+
+            try{
+                saveBarToCSV(previousBar);
+            } catch (JsonProcessingException jpe) {
+                logger.error("Could not saveBarToCSV.", jpe);
+            }
         }
 
         series.addBar(newBar);
+
     }
 
     public void setOffline(boolean offline) {

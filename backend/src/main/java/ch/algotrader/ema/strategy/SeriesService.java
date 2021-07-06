@@ -5,7 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.*;
+import org.ta4j.core.Bar;
+import org.ta4j.core.BaseBar;
+import org.ta4j.core.BaseBarSeries;
+import org.ta4j.core.BaseBarSeriesBuilder;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.Num;
@@ -117,16 +120,10 @@ public class SeriesService {
     public List<String> getRuntimeIndicator(String indicatorName) {
         List<String> indicatorValues = new ArrayList<>();
 
-//        Integer emaCount = indicatorName.toLowerCase(Locale.ROOT).contains("long") ?
-//                emaBarCountLong : emaBarCountShort;
+        EMAIndicator ema = indicatorName.toLowerCase(Locale.ROOT).equals("long") ? strategyLogic.lema : strategyLogic.sema;
+        ClosePriceIndicator close = new ClosePriceIndicator(ema.getBarSeries());
 
-        BarSeries series = strategyLogic.series;
-        EMAIndicator ema = indicatorName.toLowerCase(Locale.ROOT).contains("long") ? strategyLogic.lema : strategyLogic.sema;
-        ClosePriceIndicator close = new ClosePriceIndicator(series);
-//        EMAIndicator ema = new EMAIndicator(close, emaCount);
-
-        List<Bar> barData = series.getBarData();
-        for(int i = 1; i < barData.size() ; i++) {
+        for(int i = 1; i < ema.getBarSeries().getBarCount() ; i++) {
             Num value = close.getValue(i);
             if(i > emaBarCountLong) {
                 try {
