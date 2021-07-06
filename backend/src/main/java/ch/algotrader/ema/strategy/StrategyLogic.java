@@ -110,13 +110,14 @@ public class StrategyLogic implements InitializingBean {
                 }
             }
         }
-        // save trades to csv (p,q,T) use T
+        // save trades to csv (p,q,T) then T
         writeToFile(TRADES_CSV, message);
 
-        // TODO: alt: create range bar, no cron
+        // TODO alt: create range bar
     }
 
     // todo: start on demand jobs by barDuration  + sse
+    // use trade timestamp 'T' instead, to avoid delayed trades
     @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {
         synchronized (series) {

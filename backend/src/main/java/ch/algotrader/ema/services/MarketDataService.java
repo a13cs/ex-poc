@@ -71,7 +71,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
 
     @Value("${barDuration}")
     private int barDuration;
-    private static final double MIN_QUANTITY_LIMIT = 0.005;
+    private static final double MIN_QUANTITY_LIMIT = 0.002;
 
 
     @Autowired
