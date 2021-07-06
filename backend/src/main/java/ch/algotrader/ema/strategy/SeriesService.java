@@ -184,6 +184,8 @@ public class SeriesService {
                 } catch (Exception e) {
                     logger.warn("Recreating series from CSV. Could not add bar (replacing last): {}", bar);
                     series.addBar(bar,true);
+                    // Cannot add bar with end time <= previous bar end time
+//                    logger.error("Recreating series from CSV", e);
                 }
             }
         });

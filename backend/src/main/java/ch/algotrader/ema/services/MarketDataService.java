@@ -85,7 +85,7 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         if(isNotBlank(topic)) this.topic = topic;
         if (initCsv) {
             Path path = Paths.get(String.format(FILE_NAME, barDuration));
-            BaseBarSeries csvSeries = seriesService.getCsvSeries("ema", "0", path);
+            BaseBarSeries csvSeries = seriesService.getCsvSeries("baseSeries", "0", path);
             if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
         }
 

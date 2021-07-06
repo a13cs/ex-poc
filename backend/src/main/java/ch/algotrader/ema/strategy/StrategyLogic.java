@@ -143,7 +143,7 @@ public class StrategyLogic implements InitializingBean {
             try {
                 this.series.addBar(series.getBar(i));
 
-                logBar();
+                logBar();  // no trades count info in bars csv
                 evaluateLogic();
             } catch (Exception e) {
                 logger.warn("Error adding bar {} from CSV.", i);
