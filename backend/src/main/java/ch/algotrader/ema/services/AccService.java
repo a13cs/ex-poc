@@ -75,7 +75,6 @@ public class AccService {
         TypeReference<ArrayList<AccTradesResponse>> valueTypeRef = new TypeReference<>() { };
         ArrayList<AccTradesResponse> accTradesResponses = OM.readValue(body, valueTypeRef);
 
-
         List<AccTradesResponse> trades = accTradesResponses.stream()
                 .peek(t -> t.setDisplayTime(
                         LocalDateTime.ofInstant(Instant.ofEpochMilli(t.getTime()), ZoneId.systemDefault()))

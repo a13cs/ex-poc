@@ -139,12 +139,16 @@ public class MarketDataService implements DisposableBean, InitializingBean {
                 LOGGER.info(System.lineSeparator());
 
                 double quantity = Math.abs(Double.parseDouble(filteredMessage.get("q")));
+                double price = Math.abs(Double.parseDouble(filteredMessage.get("p")));
+
+                // TODO: filter/clean trades
+                if (price > 80_000 || price < 20_000) return;
                 if(quantity < MIN_QUANTITY_LIMIT) {
                     LOGGER.warn("Skipped trade with low quantity {}, price {}", filteredMessage.get("q"), filteredMessage.get("p"));
                     return;
                 }
-                mapMessage.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
 
+                mapMessage.forEach((k,v) -> LOGGER.info("{}::{}",k,v));
 //                strategyLogic.handleTradeEvent(AggTradeEvent.fromJson(mapMessage));  // or send mapMessage
                 strategyLogic.handleTradeEvent(filteredMessage);
             }

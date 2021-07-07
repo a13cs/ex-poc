@@ -18,9 +18,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-// todo: use sse/ws for online bars
 //@ConditionalOnExpression(value = "${initFromCsv:true}")
-//@ConditionalOnProperty(name = "initFromCsv", havingValue = "true")
 @RestController
 public class EmaRest {
 
@@ -40,7 +38,9 @@ public class EmaRest {
 
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
-    // todo: use csv series only for back testing
+    // TODO:
+    //  use csv series only for back testing
+    //  add saveToCsvParam
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
     public List<List<String>> latestBars(@PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
@@ -51,7 +51,8 @@ public class EmaRest {
 
         return barsFromTrades;
     }
-    //todo: add local run trading report
+
+    //todo: add local run trading report endpoint
 
     // {indicator} = short / long (ema)
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}/{from}")
@@ -65,9 +66,9 @@ public class EmaRest {
         return seriesService.getRuntimeIndicator(indicatorName);
     }
 
-    // todo: use from
     @RequestMapping(method = RequestMethod.GET, path = "/signals/{from}")
     public List<List<String>> latestSignals(@PathVariable(value = "from") String from) {
+        // todo: use from
         return seriesService.getSignals(from);
     }
 

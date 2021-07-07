@@ -103,13 +103,12 @@ export class AppComponent implements OnInit {
 
 
     //todo
-    // series.update(bar])
+    // series.update(bar)
 
     // this.http.get<any[]>('assets/bars.json').subscribe(
     this.http.get<any[]>('/be/bars/0').subscribe(
       // this.http.get<any[]>('/bars/0').subscribe(
       d => {
-        console.log(d.slice(1))
         console.log(d)
         let data: any[] = []
         let lineData: any[] = []
@@ -127,12 +126,11 @@ export class AppComponent implements OnInit {
             lineData.push({time: +point[1] as UTCTimestamp, value: point[4] | 0})
           }
         })
-        console.log(data)
         series.setData(data);
 
         closeLine.setData(lineData)
 
-        this.http.get<any[]>('/be/indicator/long/0').subscribe(
+        this.http.get<any[]>('/be/indicator/long').subscribe(
           // this.http.get<any[]>('/indicator/long').subscribe(
           d => {
             console.log(d)
@@ -145,11 +143,12 @@ export class AppComponent implements OnInit {
             // d.forEach(point => {
             //   indicatorData.push({time: +point[0] as UTCTimestamp, value: +point[0] | 0})
             // } )
-            smaLineFirst.setData(indicatorData)
+            // smaLineFirst.setData(indicatorData)
           }
         );
 
         this.http.get<any[]>('/be/indicator/short/0').subscribe(
+        // this.http.get<any[]>('/be/indicator/short').subscribe(
           // this.http.get<any[]>('/indicator/short').subscribe(
           d => {
             console.log(d)

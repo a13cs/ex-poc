@@ -1,6 +1,7 @@
 package ch.algotrader.ema.strategy;
 
 import ch.algotrader.ema.rest.model.BarModel;
+import ch.algotrader.ema.utils.BarUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -49,6 +50,7 @@ public class SeriesService {
 
         MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
         MAPPER.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
+        MAPPER.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 
     private final ZoneId utc = ZoneId.of("UTC");
@@ -62,10 +64,16 @@ public class SeriesService {
     @Value("${barDuration}")
     private Integer barDuration;
 
+    @Value("${saveToCsv}")
+    private boolean saveToCsv;
+
     @Autowired
     private StrategyLogic strategyLogic;
 
-    public List<List<String>> getLatestCSVBars(String index, Path path) /*throws IOException*/ {
+    private final static int SKIPPED_BARS = 10;
+
+
+    public List<List<String>> getLatestCSVBars(String index, Path path) {
         long from = Long.parseLong(index);
         if (from <= 0 ) from = 1;
 
@@ -100,13 +108,14 @@ public class SeriesService {
     }
 
     public List<List<String>> getTrades(String fileNameSeconds) {
-        int startSec;
         String file;
+        int startSec;
         try{
             startSec = Integer.parseInt(fileNameSeconds);
             file = "trades_start@s" + startSec + ".csv";
         } catch (NumberFormatException nfe) {
             file = StrategyLogic.TRADES_CSV;
+//            file = "trades_start@s1625679938.csv";
         }
         Path path = Paths.get(file);
         try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path, READ))) {
@@ -118,19 +127,16 @@ public class SeriesService {
                     BufferedReader bufferedReader =
                             new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer)));
 
-                    List<String> header = Arrays.asList(bufferedReader.readLine().split(","));
-                    List<List<String>> trades =
-                            bufferedReader.lines()
-                                    .map(line -> Arrays.asList(line.split(","))).collect(Collectors.toList());
-
-//                    trades.add(0, header);
-
-
-                    return trades;
+                    return bufferedReader.lines()
+                            .skip(1) // header
+                            .map(line -> Arrays.asList(line.split(",")))
+                            .collect(Collectors.toList());
                 }
             }
-        } catch (Exception e) {
-            logger.error("ex ", e);
+        } catch (NoSuchFileException e) {
+            logger.info("File {} has not been created yet.", path);
+        } catch (IOException e) {
+            logger.warn("IOException", e);
         }
         return Collections.emptyList();
 
@@ -139,12 +145,9 @@ public class SeriesService {
     public List<List<String>> getIndicator(String indicatorName, String from, Path path) {
         List<List<String>> indicatorValues = new ArrayList<>();
 
-        Integer emaCount = indicatorName.toLowerCase(Locale.ROOT).contains("long") ?
-                emaBarCountLong : emaBarCountShort;
+        Integer emaCount = indicatorName.contains("long") ? emaBarCountLong : emaBarCountShort;
 
-        //  or use series from subscribed trades channel: strategyLogic.series
         BaseBarSeries series = getCsvSeries(indicatorName, from, path);
-//        BarSeries series = strategyLogic.series;
         ClosePriceIndicator close = new ClosePriceIndicator(series);
         EMAIndicator ema = new EMAIndicator(close, emaCount);
 
@@ -156,13 +159,11 @@ public class SeriesService {
             String beginTime = String.valueOf(micro.getEpochSecond());
 
             Num value = close.getValue(i);
-//            if(i > emaCount/2) {
                 try {
                     value = ema.getValue(i);
                 } catch (Exception e) {
                     logger.debug("EMAIndicator error at index " + i, e);
                 }
-//            }
 
             double val = value.doubleValue();
             long truncated = (long) val;
@@ -177,17 +178,16 @@ public class SeriesService {
     public List<String> getRuntimeIndicator(String indicatorName) {
         List<String> indicatorValues = new ArrayList<>();
 
-        EMAIndicator ema = indicatorName.toLowerCase(Locale.ROOT).equals("long") ? strategyLogic.lema : strategyLogic.sema;
+        //  todo
+        EMAIndicator ema = indicatorName.equals("long") ? strategyLogic.lema : strategyLogic.sema;
         ClosePriceIndicator close = new ClosePriceIndicator(ema.getBarSeries());
 
         for(int i = 1; i < ema.getBarSeries().getBarCount() ; i++) {
             Num value = close.getValue(i);
-            if(i > emaBarCountLong) {
-                try {
-                    value = ema.getValue(i);
-                } catch (Exception e) {
-                    logger.debug("EMAIndicator error at index " + i, e);
-                }
+            try {
+                value = ema.getValue(i);
+            } catch (Exception e) {
+                logger.debug("EMAIndicator error at index " + i, e);
             }
 
             double val = value.doubleValue();
@@ -200,12 +200,12 @@ public class SeriesService {
         return indicatorValues;
     }
 
-    public List<List<String>> getTradesSeries(String name) {
-        List<List<String>> barsCSVTrades = getTrades(""); // p,q,T
-        final BaseBarSeries series = new BaseBarSeriesBuilder().withName(name).build();
+    public List<List<String>> getTradesSeries(String seriesName) {
+        final Duration duration = Duration.ofSeconds(barDuration);
+        final BaseBarSeries series = new BaseBarSeriesBuilder().withName(seriesName).build();
+        List<List<String>> csvTrades = getTrades(""); // p,q,T
 
-
-        long startTime = Long.parseLong(barsCSVTrades.get(0).get(2)) ;
+        long startTime = Long.parseLong(csvTrades.get(0).get(2)) ;
         logger.info("initial start startTime {}", startTime);
 
         ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startTime), utc);
@@ -213,86 +213,85 @@ public class SeriesService {
         logger.info("start ZonedDateTime {} from timestamp {}", dateTime, startTime);
         dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(clean*100_000), utc);
 
-        logger.info("dateTime.plusSeconds(barDuration) {}", dateTime.plusSeconds(barDuration));
-        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration),
-//                dateTime.plusSeconds(barDuration)
-                ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTime.plusSeconds(barDuration).toEpochSecond()*100), utc)
-                , series.function());
+        long firstBarEndTimeSeconds = dateTime.plusSeconds(barDuration).toEpochSecond();
+        ZonedDateTime firstBarEndTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(firstBarEndTimeSeconds * 100 /*todo*/), utc);
+        logger.info("firstBarEndTimeSeconds * 100 {}", firstBarEndTime);
+
+        Bar firstBar = new BaseBar(duration, firstBarEndTime, series.function());
         series.addBar(firstBar);
 
         startTime = dateTime.toEpochSecond()*1_000;
         logger.info("start startTime {}", startTime);
 
-        for(int i = 0; i < barsCSVTrades.size(); i++) {
-//        barsCSVTrades.forEach( trade ->
+        for (List<String> trade : csvTrades) {
             {
-                // dup
-//                logger.info(Arrays.toString(barsCSVTrades.get(i).toArray(new String[0])));
+                double amount = Math.abs(Double.parseDouble(trade.get(1)));
+                double price = Math.abs(Double.parseDouble(trade.get(0)));
 
-                double amount = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(1)));
-                double price = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(0)));
-
-            if (amount < 0.005 && price > 100_000 && price < 20_000) continue;
+                // TODO: filter trades
+                if (amount < 0.005 || price > 80_000 || price < 20_000) continue;
 
                 if (price > 0) {
-                    int ind = series.getEndIndex();
-                    logger.info("series.getEndIndex {}", ind);
+                    int index = series.getEndIndex();
                     series.addTrade(amount, price);
 
-                    if (ind >= 0) {
-//                        long startTime = series.getBar(ind).getBeginTime().toEpochSecond();
-                        int seriesBarCount = series.getBarCount() > 0 ? series.getBarCount() : 1;
-                        long nextBarTime =  dateTime.plusSeconds((long) barDuration * seriesBarCount).toEpochSecond()*1_000;
-                        logger.info("nextBarTime {}", nextBarTime);
+                    if (index >= 0) {
+                        long seriesBarCount = series.getBarCount() > 0 ? series.getBarCount() : 1;
+                        long nextBarTime = dateTime.plusSeconds((long) barDuration * seriesBarCount).toEpochSecond() * 1_000;
+                        long currentTradeTime = (long) Double.parseDouble(trade.get(2));
 
-                        long currentTradeTime = (long) Double.parseDouble(barsCSVTrades.get(i).get(2));
                         logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
-                        if (currentTradeTime/1_000 >= nextBarTime/1_000) {
+                        ZonedDateTime startDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startTime), utc);
+                        ZonedDateTime nextDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextBarTime), utc);
+                        ZonedDateTime currentDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTradeTime), utc);
+                        logger.info("startTime {} nextBarTime {} currentTradeTime {}", startDateTime, nextDateTime, currentDateTime);
+
+                        if (currentTradeTime / 1_000 >= nextBarTime / 1_000) {
                             logger.info("currentTradeTime >= nextBarTime  {} ms", currentTradeTime - nextBarTime);
 
-                            // TODO: fix bar end time
-                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli((nextBarTime)), utc);
-//                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTradeTime + barDuration*1000), ZoneId.of("UTC"));
-//                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextBarTime), ZoneId.of("UTC"));
-                            Bar newBar = new BaseBar(Duration.ofSeconds(barDuration), time, series.function());
+                            ZonedDateTime barEndTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli((nextBarTime)), utc);
+                            Bar newBar = new BaseBar(duration, barEndTime, series.function());
 
                             // set price to closing price of previous bar
-//                        int i = series.getEndIndex();
-//                        if (i >= 0) {
-                            Bar previousBar = series.getBar(ind);
+                            Bar previousBar = series.getBar(index);
                             newBar.addPrice(previousBar.getClosePrice());
-//                        }
 
-                            try{
+                            // may save trade quantities around main price levels, per bar.
+                            try {
                                 series.addBar(newBar);
                             } catch (Exception e) {
-//                                series.addBar(newBar, true);
+//                                series.addBar(newBar, true);  // replace failed
                             }
                         }
                     }
                 }
             }
         }
-//        series.getBarData().forEach(Object::toString);
+//        logger.info("Series bar data: ");
+//        series.getBarData().forEach(b -> logger.info(b.toString()));
 
-        // todo: cache/save to file
+        String fileName = "bnc_trades_" + barDuration + "s.csv";
+
         return series.getBarData().stream()
-                .skip(10)  // first bar is x10 the duration.
-                .map(bar ->
-        {
-            BarModel barModel = BarModel.fromBar(bar);
+                .skip(SKIPPED_BARS)  // first bar is x10 the duration.
+                .map(SeriesService::serializeBar)
+                .peek(b -> { if(saveToCsv) BarUtils.writeValuesToFile(fileName, b); } )
+                .collect(Collectors.toList());
+    }
 
-            Map<String, String> barFields = new HashMap<>();
-            try {
-                barFields = MAPPER.readValue(
-                                MAPPER.writeValueAsString(barModel),
-                                new TypeReference<LinkedHashMap<String, String>>() {
-                            });
-            } catch (JsonProcessingException e) {
-                logger.error("Bars from trades ex. ", e);
-            }
-            return new ArrayList<>(barFields.values());
-        }).collect(Collectors.toList());
+    private static ArrayList<String> serializeBar(Bar bar) {
+        Map<String, String> barFields = new HashMap<>();
+        BarModel barModel = BarModel.fromBar(bar);
+        try {
+            barFields = MAPPER.readValue(
+                    MAPPER.writeValueAsString(barModel),
+                    new TypeReference<LinkedHashMap<String, String>>() {
+                    });
+        } catch (JsonProcessingException e) {
+            logger.error("Bars from trades serialization exception. ", e);
+        }
+
+        return new ArrayList<>(barFields.values());
     }
 
     public BaseBarSeries getCsvSeries(String indicatorName, String from, Path path) {
@@ -315,7 +314,7 @@ public class SeriesService {
                         .longValueExact();
                 Instant inst = Instant.ofEpochSecond(seconds, nanos);
                 logger.debug("Nanos for price {} {}",price, inst);  // 2021-05-26T21:20:25.004043001Z
-                ZonedDateTime dateTime = ZonedDateTime.ofInstant(inst, ZoneId.of("UTC"));
+                ZonedDateTime dateTime = ZonedDateTime.ofInstant(inst, utc);
 
                 Bar bar = new BaseBar(
                         Duration.ofSeconds(barDuration),
