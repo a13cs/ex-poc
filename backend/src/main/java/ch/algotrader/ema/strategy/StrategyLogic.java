@@ -109,7 +109,7 @@ public class StrategyLogic implements InitializingBean {
                 double price  = Math.abs(Double.parseDouble(message.get("p")));
 
                 // todo:
-                if (amount < 0.003 && price > 100_000 && price < 20_000) return;
+                if (/*amount < 0.003 && */price > 100_000 && price < 20_000) return;
 
                 if (price > 0) {
                     series.addTrade(amount, price);

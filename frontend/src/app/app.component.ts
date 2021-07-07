@@ -101,6 +101,10 @@ export class AppComponent implements OnInit {
 
     // load data
 
+
+    //todo
+    // series.update(bar])
+
     // this.http.get<any[]>('assets/bars.json').subscribe(
     this.http.get<any[]>('/be/bars/0').subscribe(
       // this.http.get<any[]>('/bars/0').subscribe(

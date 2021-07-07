@@ -215,7 +215,7 @@ public class SeriesService {
                 double amount = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(1)));
                 double price = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(0)));
 
-//            if (amount < 0.003 && price > 100_000 && price < 10_000) return;
+            if (amount < 0.005 && price > 100_000 && price < 20_000) continue;
 
                 if (price > 0) {
                     int ind = series.getEndIndex();
@@ -231,7 +231,7 @@ public class SeriesService {
                         if (currentTradeTime/1_000 >= nextBarTime/1_000) {
                             logger.info("currentTradeTime >= nextBarTime  {}", currentTradeTime - nextBarTime);
 
-                            ZonedDateTime now = ZonedDateTime.now();
+//                            ZonedDateTime now = ZonedDateTime.now();
                             ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(currentTradeTime + barDuration*1000), ZoneId.of("UTC"));
                             Bar newBar = new BaseBar(Duration.ofSeconds(barDuration), time, series.function());
 
@@ -245,7 +245,7 @@ public class SeriesService {
                             try{
                                 series.addBar(newBar);
                             } catch (Exception e) {
-                                series.addBar(newBar, true);
+//                                series.addBar(newBar, true);
                             }
                         }
                     }
