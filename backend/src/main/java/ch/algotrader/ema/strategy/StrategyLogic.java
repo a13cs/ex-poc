@@ -48,7 +48,7 @@ public class StrategyLogic implements InitializingBean {
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
-    private static final String TRADES_CSV = "trades_start@s" + Instant.now().getEpochSecond() + ".csv";
+    public static final String TRADES_CSV = "trades_start@s" + Instant.now().getEpochSecond() + ".csv";
 
     @Value("${barDuration}")
     private int barDuration;
@@ -231,13 +231,13 @@ public class StrategyLogic implements InitializingBean {
                     logger.info("!!!!!!!! BUY !!!!!!!!!)");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "B"});
-//                    accService.sendOrder("buy", quantity, symbol);
+                    accService.sendOrder("buy", quantity, symbol);
                 } else if (strategy.shouldExit(i)) {
                     //sell or close
                     logger.info("!!!!!!!! SELL !!!!!!!!!");
                     ZonedDateTime endTime = series.getBar(i).getEndTime();
                     signals.add(new String[]{Long.toString(endTime.toEpochSecond()), "S"});
-//                    accService.sendOrder("sell", quantity, symbol);
+                    accService.sendOrder("sell", quantity, symbol);
                 }
             }
         } catch (NullPointerException npe) {

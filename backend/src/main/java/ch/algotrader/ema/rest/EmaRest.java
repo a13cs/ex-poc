@@ -46,7 +46,7 @@ public class EmaRest {
         String fileName = String.format(FILE_NAME, barDuration);
 //        return seriesService.getLatestCSVBars(from, Paths.get(fileName));
 
-        List<List<String>> barsFromTrades = seriesService.getTradesSeries("");
+        List<List<String>> barsFromTrades = seriesService.getTradesSeries(""); // add filename 'seconds' param
         barsFromTrades.forEach(t -> logger.info(Arrays.toString(t.toArray(new String[0]))));
 
         return barsFromTrades;

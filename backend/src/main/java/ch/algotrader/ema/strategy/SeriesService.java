@@ -97,17 +97,15 @@ public class SeriesService {
         return Collections.emptyList();
     }
 
-    public List<List<String>> getTrades(String fileName) {
+    public List<List<String>> getTrades(String fileNameSeconds) {
         int startSec;
         String file;
         try{
-            startSec = Integer.parseInt(fileName);
+            startSec = Integer.parseInt(fileNameSeconds);
             file = "trades_start@s" + startSec + ".csv";
         } catch (NumberFormatException nfe) {
-            file = "trades_start@s1625585577.csv";
-//            file = "trades_start@s1625617905.csv";
+            file = StrategyLogic.TRADES_CSV;
         }
-//        String file = "trades_start@s1625586754.csv";
         Path path = Paths.get(file);
         try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path, READ))) {
             if(Files.exists(path)) {
@@ -203,7 +201,7 @@ public class SeriesService {
     public List<List<String>> getTradesSeries(String name) {
         List<List<String>> barsCSVTrades = getTrades(""); // p,q,T
         final BaseBarSeries series = new BaseBarSeriesBuilder().withName(name).build();
-        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration), ZonedDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(barsCSVTrades.get(0).get(2))), ZoneId.of("UTC")), series.function());
+        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration), ZonedDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(barsCSVTrades.get(0).get(2)) + barDuration*1000), ZoneId.of("UTC")), series.function());
         series.addBar(firstBar);
 
 
@@ -234,7 +232,7 @@ public class SeriesService {
                             logger.info("currentTradeTime >= nextBarTime  {}", currentTradeTime - nextBarTime);
 
                             ZonedDateTime now = ZonedDateTime.now();
-                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(currentTradeTime), ZoneId.of("UTC"));
+                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(currentTradeTime + barDuration*1000), ZoneId.of("UTC"));
                             Bar newBar = new BaseBar(Duration.ofSeconds(barDuration), time, series.function());
 
                             // set price to closing price of previous bar
