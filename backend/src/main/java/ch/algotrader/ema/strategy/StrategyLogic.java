@@ -76,6 +76,7 @@ public class StrategyLogic implements InitializingBean {
     EMAIndicator sema;
     EMAIndicator lema;
 
+    private long index = 1;
 
     private Integer csvBarCount = 0;
 
@@ -107,7 +108,8 @@ public class StrategyLogic implements InitializingBean {
                 double amount = Math.abs(Double.parseDouble(message.get("q")));
                 double price  = Math.abs(Double.parseDouble(message.get("p")));
 
-                if (amount < 0.003 && price > 100_000 && price < 10_000) return;
+                // todo:
+                if (amount < 0.003 && price > 100_000 && price < 20_000) return;
 
                 if (price > 0) {
                     series.addTrade(amount, price);
@@ -118,7 +120,12 @@ public class StrategyLogic implements InitializingBean {
 //                    if (i >= 0) {
 //                        Bar previousBar = series.getBar(i);
 //                    }
-                    if (new BigDecimal(message.get("T")).longValue() >= series.getFirstBar().getBeginTime().toEpochSecond()) {
+                    long startTime = series.getFirstBar().getBeginTime().toEpochSecond();
+                    long nextBarTime = startTime + (long) barDuration * series.getBarCount();
+                    long currentTradeTime = new BigDecimal(message.get("T")).longValue();
+                    logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
+                    if (currentTradeTime >= nextBarTime) {
+                        logger.info("currentTradeTime >= nextBarTime");
                         createNewBar();
                     }
                 }
@@ -138,6 +145,8 @@ public class StrategyLogic implements InitializingBean {
                 if(offline) return;
                 if ((series.isEmpty() || series.getBarCount() < csvBarCount) && csvBarCount > 0) return;
 
+                // todo: may evaluate twice, delayed trades
+//                if (series.getEndIndex() <= index && series.getEndIndex()!=1) return;
                 logBar();
                 evaluateLogic();
 
@@ -166,6 +175,7 @@ public class StrategyLogic implements InitializingBean {
 
     private void logBar() {
         int i = series.getEndIndex();
+        index = i;
         if(i <= 0) return;
 
         Bar bar = series.getBar(i);

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 
 // todo: use sse/ws for online bars
@@ -43,7 +44,12 @@ public class EmaRest {
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
     public List<List<String>> latestBars(@PathVariable(value = "from") String from) {
         String fileName = String.format(FILE_NAME, barDuration);
-        return seriesService.getLatestCSVBars(from, Paths.get(fileName));
+//        return seriesService.getLatestCSVBars(from, Paths.get(fileName));
+
+        List<List<String>> barsFromTrades = seriesService.getTradesSeries("");
+        barsFromTrades.forEach(t -> logger.info(Arrays.toString(t.toArray(new String[0]))));
+
+        return barsFromTrades;
     }
     //todo: add local run trading report
 

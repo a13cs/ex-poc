@@ -1,5 +1,11 @@
 package ch.algotrader.ema.strategy;
 
+import ch.algotrader.ema.rest.model.BarModel;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +24,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -32,6 +39,17 @@ import static java.nio.file.StandardOpenOption.READ;
 public class SeriesService {
 
     private static final Logger logger = LoggerFactory.getLogger(SeriesService.class);
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    static {
+        MAPPER.findAndRegisterModules();
+        MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        MAPPER.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+        MAPPER.configure(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS, true);
+
+        MAPPER.configure(SerializationFeature.INDENT_OUTPUT, true);
+        MAPPER.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
+    }
 
     @Value("${emaPeriodLong}")
     private Integer emaBarCountLong;
@@ -77,6 +95,45 @@ public class SeriesService {
         }
 
         return Collections.emptyList();
+    }
+
+    public List<List<String>> getTrades(String fileName) {
+        int startSec;
+        String file;
+        try{
+            startSec = Integer.parseInt(fileName);
+            file = "trades_start@s" + startSec + ".csv";
+        } catch (NumberFormatException nfe) {
+            file = "trades_start@s1625585577.csv";
+//            file = "trades_start@s1625617905.csv";
+        }
+//        String file = "trades_start@s1625586754.csv";
+        Path path = Paths.get(file);
+        try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path, READ))) {
+            if(Files.exists(path)) {
+                int size = bis.available();
+                byte[] buffer = new byte[size];
+
+                if (bis.read(buffer) > 0) {
+                    BufferedReader bufferedReader =
+                            new BufferedReader(new InputStreamReader(new ByteArrayInputStream(buffer)));
+
+                    List<String> header = Arrays.asList(bufferedReader.readLine().split(","));
+                    List<List<String>> trades =
+                            bufferedReader.lines()
+                                    .map(line -> Arrays.asList(line.split(","))).collect(Collectors.toList());
+
+//                    trades.add(0, header);
+
+
+                    return trades;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("ex ", e);
+        }
+        return Collections.emptyList();
+
     }
 
     public List<List<String>> getIndicator(String indicatorName, String from, Path path) {
@@ -141,6 +198,80 @@ public class SeriesService {
             indicatorValues.add(emaValue);
         }
         return indicatorValues;
+    }
+
+    public List<List<String>> getTradesSeries(String name) {
+        List<List<String>> barsCSVTrades = getTrades(""); // p,q,T
+        final BaseBarSeries series = new BaseBarSeriesBuilder().withName(name).build();
+        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration), ZonedDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(barsCSVTrades.get(0).get(2))), ZoneId.of("UTC")), series.function());
+        series.addBar(firstBar);
+
+
+        long startTime = Long.parseLong(barsCSVTrades.get(0).get(2)) ;
+        for(int i = 0; i < barsCSVTrades.size(); i++) {
+//        barsCSVTrades.forEach( trade ->
+            {
+                // dup
+//                logger.info(Arrays.toString(barsCSVTrades.get(i).toArray(new String[0])));
+
+                double amount = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(1)));
+                double price = Math.abs(Double.parseDouble(barsCSVTrades.get(i).get(0)));
+
+//            if (amount < 0.003 && price > 100_000 && price < 10_000) return;
+
+                if (price > 0) {
+                    int ind = series.getEndIndex();
+                    logger.info("series.getEndIndex {}", ind);
+                    series.addTrade(amount, price);
+
+                    if (ind >= 0) {
+//                        long startTime = series.getBar(ind).getBeginTime().toEpochSecond();
+                        int seriesBarCount = series.getBarCount() > 0 ? series.getBarCount() : 1;
+                        long nextBarTime = startTime + (long) barDuration * 1_000 * seriesBarCount;
+                        long currentTradeTime = (long) Double.parseDouble(barsCSVTrades.get(i).get(2));
+                        logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
+                        if (currentTradeTime/1_000 >= nextBarTime/1_000) {
+                            logger.info("currentTradeTime >= nextBarTime  {}", currentTradeTime - nextBarTime);
+
+                            ZonedDateTime now = ZonedDateTime.now();
+                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(currentTradeTime), ZoneId.of("UTC"));
+                            Bar newBar = new BaseBar(Duration.ofSeconds(barDuration), time, series.function());
+
+                            // set price to closing price of previous bar
+//                        int i = series.getEndIndex();
+//                        if (i >= 0) {
+                            Bar previousBar = series.getBar(ind);
+                            newBar.addPrice(previousBar.getClosePrice());
+//                        }
+
+                            try{
+                                series.addBar(newBar);
+                            } catch (Exception e) {
+                                series.addBar(newBar, true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+//        series.getBarData().forEach(Object::toString);
+
+        // todo: cache/save to file
+        return series.getBarData().stream().map(bar ->
+        {
+            BarModel barModel = BarModel.fromBar(bar);
+
+            Map<String, String> barFields = new HashMap<>();
+            try {
+                barFields = MAPPER.readValue(
+                                MAPPER.writeValueAsString(barModel),
+                                new TypeReference<LinkedHashMap<String, String>>() {
+                            });
+            } catch (JsonProcessingException e) {
+                logger.error("Bars from trades ex. ", e);
+            }
+            return new ArrayList<>(barFields.values());
+        }).collect(Collectors.toList());
     }
 
     public BaseBarSeries getCsvSeries(String indicatorName, String from, Path path) {
