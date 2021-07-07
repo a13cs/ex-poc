@@ -277,7 +277,7 @@ public class SeriesService {
 
         // todo: cache/save to file
         return series.getBarData().stream()
-                .skip(1)  // first bar is x10 the duration.
+                .skip(10)  // first bar is x10 the duration.
                 .map(bar ->
         {
             BarModel barModel = BarModel.fromBar(bar);
