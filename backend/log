@@ -1,0 +1,302 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v2.5.0)
+
+2021-07-07 13:20:43.244  INFO 10930 --- [           main] ch.algotrader.ema.Application            : Starting Application v0.0.1-SNAPSHOT using Java 11.0.11 on fedora with PID 10930 (/home/alex/ws/ex-poc/backend/target/demo-be-0.0.1-SNAPSHOT.jar started by alex in /home/alex/ws/ex-poc/backend)
+2021-07-07 13:20:43.248  INFO 10930 --- [           main] ch.algotrader.ema.Application            : No active profile set, falling back to default profiles: default
+2021-07-07 13:20:43.905  INFO 10930 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2021-07-07 13:20:43.922  INFO 10930 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 9 ms. Found 0 JPA repository interfaces.
+2021-07-07 13:20:44.472  INFO 10930 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2021-07-07 13:20:44.485  INFO 10930 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2021-07-07 13:20:44.485  INFO 10930 --- [           main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.46]
+2021-07-07 13:20:44.550  INFO 10930 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2021-07-07 13:20:44.551  INFO 10930 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1250 ms
+2021-07-07 13:20:44.723  INFO 10930 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2021-07-07 13:20:44.907  INFO 10930 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2021-07-07 13:20:44.961  INFO 10930 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2021-07-07 13:20:45.008  INFO 10930 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.4.31.Final
+2021-07-07 13:20:45.141  INFO 10930 --- [           main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2021-07-07 13:20:45.241  INFO 10930 --- [           main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.H2Dialect
+2021-07-07 13:20:45.430  INFO 10930 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2021-07-07 13:20:45.438  INFO 10930 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2021-07-07 13:20:45.577  WARN 10930 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2021-07-07 13:20:45.789  INFO 10930 --- [           main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [META-INF/resources/index.html]
+2021-07-07 13:20:45.985  INFO 10930 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2021-07-07 13:20:46.005  INFO 10930 --- [           main] ch.algotrader.ema.Application            : Started Application in 3.261 seconds (JVM running for 3.686)
+2021-07-07 13:20:46.007  INFO 10930 --- [           main] o.s.b.a.ApplicationAvailabilityBean      : Application availability state LivenessState changed to CORRECT
+2021-07-07 13:20:46.013  INFO 10930 --- [           main] c.algotrader.ema.strategy.SeriesService  : File bnc_trades_60s.csv has not been created yet.
+2021-07-07 13:20:46.019  WARN 10930 --- [           main] c.algotrader.ema.strategy.SeriesService  : NoSuchFileException
+
+java.nio.file.NoSuchFileException: bnc_trades_60s.csv
+	at java.base/sun.nio.fs.UnixException.translateToIOException(UnixException.java:92) ~[na:na]
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:111) ~[na:na]
+	at java.base/sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:116) ~[na:na]
+	at java.base/sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:219) ~[na:na]
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:371) ~[na:na]
+	at java.base/java.nio.file.Files.newByteChannel(Files.java:422) ~[na:na]
+	at java.base/java.nio.file.spi.FileSystemProvider.newInputStream(FileSystemProvider.java:420) ~[na:na]
+	at java.base/java.nio.file.Files.newInputStream(Files.java:156) ~[na:na]
+	at ch.algotrader.ema.strategy.SeriesService.getLatestCSVBars(SeriesService.java:72) ~[classes!/:0.0.1-SNAPSHOT]
+	at ch.algotrader.ema.strategy.SeriesService.getCsvSeries(SeriesService.java:299) ~[classes!/:0.0.1-SNAPSHOT]
+	at ch.algotrader.ema.services.MarketDataService.subscribeTrades(MarketDataService.java:88) ~[classes!/:0.0.1-SNAPSHOT]
+	at ch.algotrader.ema.Application.run(Application.java:38) ~[classes!/:0.0.1-SNAPSHOT]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:795) ~[spring-boot-2.5.0.jar!/:2.5.0]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:779) ~[spring-boot-2.5.0.jar!/:2.5.0]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:344) ~[spring-boot-2.5.0.jar!/:2.5.0]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1336) ~[spring-boot-2.5.0.jar!/:2.5.0]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1325) ~[spring-boot-2.5.0.jar!/:2.5.0]
+	at ch.algotrader.ema.Application.main(Application.java:28) ~[classes!/:0.0.1-SNAPSHOT]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:566) ~[na:na]
+	at org.springframework.boot.loader.MainMethodRunner.run(MainMethodRunner.java:49) ~[demo-be-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.Launcher.launch(Launcher.java:108) ~[demo-be-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.Launcher.launch(Launcher.java:58) ~[demo-be-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+	at org.springframework.boot.loader.JarLauncher.main(JarLauncher.java:88) ~[demo-be-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+
+2021-07-07 13:20:47.450  INFO 10930 --- [           main] c.a.ema.services.MarketDataService       : Connected: 
+2021-07-07 13:20:47.455  INFO 10930 --- [           main] c.a.ema.services.MarketDataService       : session open: true
+2021-07-07 13:20:47.501  INFO 10930 --- [           main] c.a.ema.services.MarketDataService       : sending {
+  "method" : "SUBSCRIBE",
+  "params" : [ "btcusdt@trade", "btcusdt@depth" ],
+  "id" : 56
+}
+2021-07-07 13:20:47.507  INFO 10930 --- [           main] c.a.ema.services.MarketDataService       : sending {
+  "method" : "LIST_SUBSCRIPTIONS",
+  "params" : null,
+  "id" : 73
+}
+2021-07-07 13:20:47.508  INFO 10930 --- [           main] o.s.b.a.ApplicationAvailabilityBean      : Application availability state ReadinessState changed to ACCEPTING_TRAFFIC
+2021-07-07 13:20:48.536  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:48.540  WARN 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : Skipped trade with low quantity 0.00032400, price 34512.25000000
+2021-07-07 13:20:48.594  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:48.594  WARN 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : Skipped trade with low quantity 0.00032400, price 34512.25000000
+2021-07-07 13:20:50.233  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:50.233  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34516.96000000
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01448800
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812019
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812016
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244638
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678450103
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678450103
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:50.234  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34512.21000000
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01448800
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812020
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812018
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244639
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678450523
+2021-07-07 13:20:50.655  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:50.656  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678450524
+2021-07-07 13:20:50.656  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:50.656  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:51.210  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:51.210  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.55000000
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01449200
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812020
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812022
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244640
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678451080
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678451081
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:51.211  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.23000000
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00501600
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812024
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812025
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244641
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678452068
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678452069
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:52.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.55000000
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00947300
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812020
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812025
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244642
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678452068
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:52.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678452069
+2021-07-07 13:20:52.201  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:52.201  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.55000000
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00255000
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812020
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812027
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244643
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678453069
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678453070
+2021-07-07 13:20:53.199  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:53.200  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34514.66000000
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01448900
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812032
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812029
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:54.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244644
+2021-07-07 13:20:54.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678454094
+2021-07-07 13:20:54.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:54.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678454095
+2021-07-07 13:20:54.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:54.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34511.25000000
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01448900
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812033
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812031
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244645
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678454534
+2021-07-07 13:20:54.665  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:54.666  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678454535
+2021-07-07 13:20:54.666  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:54.666  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.22000000
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00280100
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812033
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812035
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244646
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678455078
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678455079
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:55.208  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.22000000
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01168800
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812034
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812035
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244647
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678455078
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678455079
+2021-07-07 13:20:55.209  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:55.210  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:55.550  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:55.550  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34499.22000000
+2021-07-07 13:20:55.550  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01261200
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812034
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812037
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244648
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678455420
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678455421
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::false
+2021-07-07 13:20:55.551  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34514.42000000
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01448900
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812040
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812037
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244649
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678456093
+2021-07-07 13:20:56.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:56.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678456094
+2021-07-07 13:20:56.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:56.224  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34513.84000000
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01449000
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812044
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812041
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244650
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678457096
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678457097
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:57.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:58.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:58.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34513.84000000
+2021-07-07 13:20:58.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01449000
+2021-07-07 13:20:58.225  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812048
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812045
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244651
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678458093
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678458094
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:58.226  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34512.46000000
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00924300
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812052
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812049
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:59.220  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244652
+2021-07-07 13:20:59.221  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678459091
+2021-07-07 13:20:59.221  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:59.221  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678459092
+2021-07-07 13:20:59.221  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:59.221  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34512.46000000
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.00524700
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812052
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812050
+2021-07-07 13:20:59.222  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244653
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678459091
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678459092
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:20:59.223  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true
+2021-07-07 13:21:00.227  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : 
+
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : p::34512.37000000
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : q::0.01449000
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : a::1812055
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : b::1812053
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : s::BTCUSDT
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : t::244654
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : T::1625678460098
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : e::trade
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : E::1625678460098
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : m::true
+2021-07-07 13:21:00.228  INFO 10930 --- [ient-SecureIO-1] c.a.ema.services.MarketDataService       : M::true

@@ -51,6 +51,8 @@ public class SeriesService {
         MAPPER.configure(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED, true);
     }
 
+    private final ZoneId utc = ZoneId.of("UTC");
+
     @Value("${emaPeriodLong}")
     private Integer emaBarCountLong;
 
@@ -201,11 +203,26 @@ public class SeriesService {
     public List<List<String>> getTradesSeries(String name) {
         List<List<String>> barsCSVTrades = getTrades(""); // p,q,T
         final BaseBarSeries series = new BaseBarSeriesBuilder().withName(name).build();
-        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration), ZonedDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(barsCSVTrades.get(0).get(2)) + barDuration*1000), ZoneId.of("UTC")), series.function());
-        series.addBar(firstBar);
 
 
         long startTime = Long.parseLong(barsCSVTrades.get(0).get(2)) ;
+        logger.info("initial start startTime {}", startTime);
+
+        ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startTime), utc);
+        long clean = dateTime.toEpochSecond()/100;
+        logger.info("start ZonedDateTime {} from timestamp {}", dateTime, startTime);
+        dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(clean*100_000), utc);
+
+        logger.info("dateTime.plusSeconds(barDuration) {}", dateTime.plusSeconds(barDuration));
+        Bar firstBar = new BaseBar(Duration.ofSeconds(barDuration),
+//                dateTime.plusSeconds(barDuration)
+                ZonedDateTime.ofInstant(Instant.ofEpochMilli(dateTime.plusSeconds(barDuration).toEpochSecond()*100), utc)
+                , series.function());
+        series.addBar(firstBar);
+
+        startTime = dateTime.toEpochSecond()*1_000;
+        logger.info("start startTime {}", startTime);
+
         for(int i = 0; i < barsCSVTrades.size(); i++) {
 //        barsCSVTrades.forEach( trade ->
             {
@@ -225,14 +242,18 @@ public class SeriesService {
                     if (ind >= 0) {
 //                        long startTime = series.getBar(ind).getBeginTime().toEpochSecond();
                         int seriesBarCount = series.getBarCount() > 0 ? series.getBarCount() : 1;
-                        long nextBarTime = startTime + (long) barDuration * 1_000 * seriesBarCount;
+                        long nextBarTime =  dateTime.plusSeconds((long) barDuration * seriesBarCount).toEpochSecond()*1_000;
+                        logger.info("nextBarTime {}", nextBarTime);
+
                         long currentTradeTime = (long) Double.parseDouble(barsCSVTrades.get(i).get(2));
                         logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
                         if (currentTradeTime/1_000 >= nextBarTime/1_000) {
-                            logger.info("currentTradeTime >= nextBarTime  {}", currentTradeTime - nextBarTime);
+                            logger.info("currentTradeTime >= nextBarTime  {} ms", currentTradeTime - nextBarTime);
 
-//                            ZonedDateTime now = ZonedDateTime.now();
-                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochSecond(currentTradeTime + barDuration*1000), ZoneId.of("UTC"));
+                            // TODO: fix bar end time
+                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli((nextBarTime)), utc);
+//                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTradeTime + barDuration*1000), ZoneId.of("UTC"));
+//                            ZonedDateTime time = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextBarTime), ZoneId.of("UTC"));
                             Bar newBar = new BaseBar(Duration.ofSeconds(barDuration), time, series.function());
 
                             // set price to closing price of previous bar
@@ -255,7 +276,9 @@ public class SeriesService {
 //        series.getBarData().forEach(Object::toString);
 
         // todo: cache/save to file
-        return series.getBarData().stream().map(bar ->
+        return series.getBarData().stream()
+                .skip(1)  // first bar is x10 the duration.
+                .map(bar ->
         {
             BarModel barModel = BarModel.fromBar(bar);
 
