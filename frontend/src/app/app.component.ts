@@ -148,8 +148,8 @@ export class AppComponent implements OnInit {
         );
 
         // this.http.get<any[]>('/be/indicator/short/0').subscribe(
-        this.http.get<any[]>('/be/indicator/short/0').subscribe(
-          // this.http.get<any[]>('/indicator/short').subscribe(
+        // this.http.get<any[]>('/be/indicator/short/0').subscribe(
+          this.http.get<any[]>('/indicator/short/0').subscribe(
           d => {
             console.log(d)
             d = d.map(i => i[1] )
@@ -158,7 +158,7 @@ export class AppComponent implements OnInit {
             for (let i = 1; i < data.length; i++) {
               indicatorData.push({time: +data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | data[i].close})
             }
-            smaLineSecond.setData(indicatorData)
+            // smaLineSecond.setData(indicatorData)
           }
         );
 
