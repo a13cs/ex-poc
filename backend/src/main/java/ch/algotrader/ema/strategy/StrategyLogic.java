@@ -45,7 +45,7 @@ public class StrategyLogic implements InitializingBean {
     @Value("${barDuration}")
     private int barDuration;
 
-    @Value("${saveToCsv}")
+    @Value("${saveBarsToCsv}")
     private boolean saveToCsv;
 
     @Value("${offline}")

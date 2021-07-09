@@ -64,7 +64,7 @@ public class SeriesService {
     @Value("${barDuration}")
     private Integer barDuration;
 
-    @Value("${saveToCsv}")
+    @Value("${saveBarsToCsv}")
     private boolean saveToCsv;
 
     @Autowired
