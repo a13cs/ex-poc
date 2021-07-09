@@ -131,7 +131,7 @@ export class AppComponent implements OnInit {
         closeLine.setData(lineData)
 
         // this.http.get<any[]>('/be/indicator/long').subscribe(
-          this.http.get<any[]>('/indicator/long').subscribe(
+          this.http.get<any[]>('/indicator/long/0').subscribe(
           d => {
             console.log(d)
             d = d.map(i => i[1] )
@@ -148,7 +148,7 @@ export class AppComponent implements OnInit {
         );
 
         // this.http.get<any[]>('/be/indicator/short/0').subscribe(
-        this.http.get<any[]>('/be/indicator/short').subscribe(
+        this.http.get<any[]>('/be/indicator/short/0').subscribe(
           // this.http.get<any[]>('/indicator/short').subscribe(
           d => {
             console.log(d)

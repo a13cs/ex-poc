@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
-    "build": "ng build --output-path dist/META-INF/resources",
+    "build": "ng build --prod --output-path dist/META-INF/resources",
     "watch": "ng build --output-path dist/META-INF/resources --watch --configuration development",
     "test": "ng test"
   },
