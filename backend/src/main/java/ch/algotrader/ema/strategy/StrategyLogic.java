@@ -96,7 +96,7 @@ public class StrategyLogic implements InitializingBean {
 
                 // todo:
                 //  use getTradesSeries()
-                //  and/or save trades in memory to recreate
+                //  and/or save trades in memory to recreate bars
                 if (price > 0) {
                     series.addTrade(amount, price);
 

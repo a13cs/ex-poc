@@ -70,7 +70,8 @@ public class SeriesService {
     @Autowired
     private StrategyLogic strategyLogic;
 
-    private final static int SKIPPED_BARS = 5;
+    @Value("${skippedFirstBars}")
+    private int skippedBars;
 
 
     public List<List<String>> getLatestCSVBars(String index, Path path) {
@@ -272,7 +273,7 @@ public class SeriesService {
         String fileName = "bnc_trades_" + barDuration + "s.csv";
 
         return series.getBarData().stream()
-                .skip(SKIPPED_BARS)  // first bar is x10 the duration.
+                .skip(skippedBars)  // first bar is x10 the duration.
                 .map(SeriesService::serializeBar)
                 .peek(b -> { if(saveToCsv) BarUtils.writeValuesToFile(fileName, b); } )
                 .collect(Collectors.toList());
