@@ -70,7 +70,7 @@ public class SeriesService {
     @Autowired
     private StrategyLogic strategyLogic;
 
-    private final static int SKIPPED_BARS = 10;
+    private final static int SKIPPED_BARS = 5;
 
 
     public List<List<String>> getLatestCSVBars(String index, Path path) {
@@ -206,11 +206,10 @@ public class SeriesService {
         List<List<String>> csvTrades = getTrades(""); // p,q,T
 
         long startTime = Long.parseLong(csvTrades.get(0).get(2)) ;
-        logger.info("initial start startTime {}", startTime);
 
         ZonedDateTime dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startTime), utc);
         long clean = dateTime.toEpochSecond()/100;
-        logger.info("start ZonedDateTime {} from timestamp {}", dateTime, startTime);
+        logger.info("Initial start ZonedDateTime {} from timestamp {}", dateTime, startTime);
         dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(clean*100_000), utc);
 
         long firstBarEndTimeSeconds = dateTime.plusSeconds(barDuration).toEpochSecond();
@@ -244,7 +243,7 @@ public class SeriesService {
                         ZonedDateTime startDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(startTime), utc);
                         ZonedDateTime nextDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextBarTime), utc);
                         ZonedDateTime currentDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(currentTradeTime), utc);
-                        logger.info("startTime {} nextBarTime {} currentTradeTime {}", startDateTime, nextDateTime, currentDateTime);
+//                        logger.info("startTime {} nextBarTime {} currentTradeTime {}", startDateTime, nextDateTime, currentDateTime);
 
                         if (currentTradeTime / 1_000 >= nextBarTime / 1_000) {
                             logger.info("currentTradeTime >= nextBarTime  {} ms", currentTradeTime - nextBarTime);

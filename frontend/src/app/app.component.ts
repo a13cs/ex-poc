@@ -102,12 +102,12 @@ export class AppComponent implements OnInit {
     // load data
 
 
-    //todo
-    // series.update(bar)
+    // todo
+    // series.update(bar) every second
 
     // this.http.get<any[]>('assets/bars.json').subscribe(
-    this.http.get<any[]>('/be/bars/0').subscribe(
-      // this.http.get<any[]>('/bars/0').subscribe(
+    // this.http.get<any[]>('/be/bars/0').subscribe(
+      this.http.get<any[]>('/bars/0').subscribe(
       d => {
         console.log(d)
         let data: any[] = []
@@ -130,8 +130,8 @@ export class AppComponent implements OnInit {
 
         closeLine.setData(lineData)
 
-        this.http.get<any[]>('/be/indicator/long').subscribe(
-          // this.http.get<any[]>('/indicator/long').subscribe(
+        // this.http.get<any[]>('/be/indicator/long').subscribe(
+          this.http.get<any[]>('/indicator/long').subscribe(
           d => {
             console.log(d)
             d = d.map(i => i[1] )
@@ -147,8 +147,8 @@ export class AppComponent implements OnInit {
           }
         );
 
-        this.http.get<any[]>('/be/indicator/short/0').subscribe(
-        // this.http.get<any[]>('/be/indicator/short').subscribe(
+        // this.http.get<any[]>('/be/indicator/short/0').subscribe(
+        this.http.get<any[]>('/be/indicator/short').subscribe(
           // this.http.get<any[]>('/indicator/short').subscribe(
           d => {
             console.log(d)
@@ -164,8 +164,8 @@ export class AppComponent implements OnInit {
 
       })
 
-    this.http.get<any[]>('/be/signals/0').subscribe( d => {
-    // this.http.get<any[]>('/signals/0').subscribe( d => {
+    // this.http.get<any[]>('/be/signals/0').subscribe( d => {
+    this.http.get<any[]>('/signals/0').subscribe( d => {
       console.log(d)
 
       let signals: any[] = d.map(s => {
@@ -183,8 +183,8 @@ export class AppComponent implements OnInit {
 
 
 /*  // todo
-    this.http.get<any[]>('/be/acc').subscribe(
-    // this.http.get<any[]>('/acc').subscribe(
+    // this.http.get<any[]>('/be/acc').subscribe(
+    this.http.get<any[]>('/acc').subscribe(
       d => {
         // let data : any = Object.keys(d)
         console.log("BTC SPOT Balance: " + JSON.stringify(d))
