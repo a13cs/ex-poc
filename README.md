@@ -16,9 +16,9 @@ trade-poc
 'http://localhost:8080/bars/{fromIndex}'
 
 ###### Strategy
-'http://localhost:8080/indicator/long/0'
+'http://localhost:8080/indicator/long/{fromIndex}/{csvTimestamp}' 
 ###### entry/exit signals
-'http://localhost:8080/signals/0'
+'http://localhost:8080/signals/{fromIndex}'
 
 ###### Account
 'http://localhost:8080/acc'
@@ -32,7 +32,8 @@ EMA
 - emaPeriodLong=15
 
 Series bars 
-- barDuration = 10
-- skippedFirstBars = 5
+- barDuration(sec)
+- skippedFirstBars
 
 ###### Default back-testing and offline usage flags: todo.
+- 'offline' cli param/app props, to not subscribe during back testing

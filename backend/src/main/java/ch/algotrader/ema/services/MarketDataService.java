@@ -69,6 +69,9 @@ public class MarketDataService implements DisposableBean, InitializingBean {
     @Value("${initFromCsv}")
     private boolean initCsv;
 
+    @Value("${offline}")
+    private boolean offline;
+
     @Value("${barDuration}")
     private int barDuration;
     private static final double MIN_QUANTITY_LIMIT = 0.002;
@@ -80,19 +83,20 @@ public class MarketDataService implements DisposableBean, InitializingBean {
         this.seriesService = seriesService;
     }
 
-    public void subscribeTrades(String topic) {
+    public void subscribeTrades(String topic, String[] args) {
 
         if(isNotBlank(topic)) this.topic = topic;
         if (initCsv) {
-            Path path = Paths.get(String.format(FILE_NAME, barDuration));
+            Path path = Paths.get(String.format(StrategyLogic.BARS_CSV, barDuration));
             BaseBarSeries csvSeries = seriesService.getCsvSeries("baseSeries", "0", path);
             if(!csvSeries.isEmpty()) strategyLogic.loadBarsFromCsv(csvSeries);
         }
 
+        if (offline || (args.length > 0 && "offline".equals(args[0])) ) return;
         try {
-            if (this.session == null || !this.session.isOpen() ) {
+            if (this.session == null || !this.session.isOpen()) {
                 if (!initSession()) {
-                    strategyLogic.setOffline(true);
+                    strategyLogic.setOffline(true); // do not load from csv during chron job onTime()
                     return; // or retry
                 }
 

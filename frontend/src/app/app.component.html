@@ -1,2 +1,7 @@
 <h2> Lightweight-Charts </h2>
 <span> Balance: {{balance | json}} </span>
+<div>
+  <button (click)="showIndicator(!indicatorVisible, 'short')">
+    Show indicator EMA-Short &nbsp; {{indicatorVisible}}
+  </button>
+</div>

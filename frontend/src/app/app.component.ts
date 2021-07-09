@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {createChart, CrosshairMode, UTCTimestamp} from 'lightweight-charts';
+import {createChart, CrosshairMode, ISeriesApi, UTCTimestamp} from 'lightweight-charts';
 import {HttpClient} from "@angular/common/http";
 
 @Component({
@@ -8,11 +8,44 @@ import {HttpClient} from "@angular/common/http";
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+
   title = 'app';
+  indicatorVisible = false
+
+  smaLineSecond: any
+  smaLineFirst: any
+
+  csvTimestamp: any
+  data: any[] = []
+  series: any = []
 
   balance = {};
 
   constructor(private http: HttpClient) {
+  }
+
+  showIndicator(show: boolean, emaLength: string /*short/long*/){
+    this.indicatorVisible = show
+    if(!show) {
+      (<ISeriesApi<"Line">>this.smaLineSecond).setData([])
+    } else {
+      this.http.get<any[]>('/indicator/' + emaLength + '/0/'+this.csvTimestamp).subscribe(
+        d => {
+          console.log(d)
+          // d = d.map(i => i[1] )
+
+          let indicatorData: any[] = []
+          for (let i = 1; i < this.data.length; i++) {
+            indicatorData.push({time: +this.data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | this.data[i].close})
+          }
+          this.smaLineSecond.setData(indicatorData)
+        }
+      );
+    }
+  }
+
+  updateLastBar() {
+
   }
 
   ngOnInit(): void {
@@ -20,8 +53,8 @@ export class AppComponent implements OnInit {
     // create charts
 
     const chart = createChart(document.body, {
-      width: 800,
-      height: 900,
+      width: 600,
+      height: 700,
       timeScale: {
         // barSpacing: 4,
         timeVisible: true,
@@ -43,15 +76,15 @@ export class AppComponent implements OnInit {
       },
     });
 
-    const series = chart.addCandlestickSeries();
+    this.series = chart.addCandlestickSeries();
 
     // long
-    let smaLineFirst = chart.addLineSeries({
+    this.smaLineFirst = chart.addLineSeries({
       color: 'rgb(10,22,125)',
       lineWidth: 3,
     });
 
-    let smaLineSecond = chart.addLineSeries({
+    this.smaLineSecond = chart.addLineSeries({
       color: 'rgb(4,107,232)',
       lineWidth: 2,
     });
@@ -101,21 +134,18 @@ export class AppComponent implements OnInit {
 
     // load data
 
-
-    // todo
-    // series.update(bar) every second
-
     // this.http.get<any[]>('assets/bars.json').subscribe(
     // this.http.get<any[]>('/be/bars/0').subscribe(
       this.http.get<any[]>('/bars/0').subscribe(
       d => {
         console.log(d)
-        let data: any[] = []
         let lineData: any[] = []
 
+        this.csvTimestamp = d.slice(0,1)[0];
+        console.log(this.csvTimestamp)
         d.slice(1).forEach( point => {
           if(+point[1]) {
-            data.push({
+            this.data.push({
                 open: point[/*"openPrice"*/3] | 0,
                 high: point[/*"highPrice"*/5] | 0,
                 low: point[/*"lowPrice"*/6] | 0,
@@ -126,41 +156,9 @@ export class AppComponent implements OnInit {
             lineData.push({time: +point[1] as UTCTimestamp, value: point[4] | 0})
           }
         })
-        series.setData(data);
+        this.series.setData(this.data);
 
         closeLine.setData(lineData)
-
-        // this.http.get<any[]>('/be/indicator/long').subscribe(
-          this.http.get<any[]>('/indicator/long/0').subscribe(
-          d => {
-            console.log(d)
-            d = d.map(i => i[1] )
-
-            let indicatorData: any[] = []
-            for (let i = 1; i < data.length; i++) {
-              indicatorData.push({time: +data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | data[i].close})
-            }
-            // d.forEach(point => {
-            //   indicatorData.push({time: +point[0] as UTCTimestamp, value: +point[0] | 0})
-            // } )
-            // smaLineFirst.setData(indicatorData)
-          }
-        );
-
-        // this.http.get<any[]>('/be/indicator/short/0').subscribe(
-        // this.http.get<any[]>('/be/indicator/short/0').subscribe(
-          this.http.get<any[]>('/indicator/short/0').subscribe(
-          d => {
-            console.log(d)
-            d = d.map(i => i[1] )
-
-            let indicatorData: any[] = []
-            for (let i = 1; i < data.length; i++) {
-              indicatorData.push({time: +data[i].time /*startTime*/ as UTCTimestamp, value: +d[i] | data[i].close})
-            }
-            // smaLineSecond.setData(indicatorData)
-          }
-        );
 
       })
 
@@ -178,11 +176,11 @@ export class AppComponent implements OnInit {
         }
       })
 
-      series.setMarkers(signals)
+      this.series.setMarkers(signals)
     })
 
 
-/*  // todo
+/*
     // this.http.get<any[]>('/be/acc').subscribe(
     this.http.get<any[]>('/acc').subscribe(
       d => {
@@ -193,6 +191,23 @@ export class AppComponent implements OnInit {
     )
 */
 
+    // get the last trade
+    // setInterval(() => this.http.get<any>('/be/lastTrade').subscribe(
+    setInterval(() => this.http.get<any>('/lastTrade').subscribe(
+      d => {
+        console.log(d)
+        // TODO get last bar, add to h,l,c
+        // BarData {
+        //   time: Time;
+        //   open: number;
+        //   high: number;
+        //   low: number;
+        //   close: number;
+        // }
+
+        // let bar : any = {};
+        // (<ISeriesApi<"Candlestick">>this.series).update(bar)
+      }), 1_000_0)
 
   }
 

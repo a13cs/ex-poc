@@ -34,7 +34,7 @@ public class EmaRest {
     @Autowired
     AccService accService;
 
-    private static final String FILE_NAME = "bnc_trades_%ss.csv";
+    private static final String FILE_NAME = "bnc_trades_%ss%s.csv";
 
     private static final Logger logger = LoggerFactory.getLogger(EmaRest.class);
 
@@ -43,7 +43,7 @@ public class EmaRest {
     //  add saveToCsvParam
     @RequestMapping(method = RequestMethod.GET, path = "/bars/{from}")
     public List<List<String>> latestBars(@PathVariable(value = "from") String from) {
-        String fileName = String.format(FILE_NAME, barDuration);
+//        String fileName = String.format(FILE_NAME, barDuration,"");
 //        return seriesService.getLatestCSVBars(from, Paths.get(fileName));
 
         List<List<String>> barsFromTrades = seriesService.getTradesSeries(""); // add filename 'seconds' param
@@ -55,10 +55,18 @@ public class EmaRest {
     //todo: add local run trading report endpoint
 
     // {indicator} = short / long (ema)
-    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}/{from}")
-    public List<List<String>> latestIndicators(@PathVariable(value = "indicator") String indicator, @PathVariable(value = "from") String from) {
-        String fileName = String.format(FILE_NAME, barDuration);
+    @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}/{from}/{timestamp}")
+    public List<String> latestIndicators(
+            @PathVariable(value = "indicator") String indicator,
+            @PathVariable(value = "from") String from,
+            @PathVariable(value = "timestamp") String timestamp) {
+        String fileName = String.format(FILE_NAME, barDuration, timestamp);
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/lastTrade")
+    public String lastTrade() {
+        return seriesService.getLastTrade();
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}")

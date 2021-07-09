@@ -33,6 +33,6 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        marketDataService.subscribeTrades("btcusdt");
+        marketDataService.subscribeTrades("btcusdt", args);
     }
 }

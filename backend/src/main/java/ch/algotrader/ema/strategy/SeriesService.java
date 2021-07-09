@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,9 +62,6 @@ public class SeriesService {
 
     @Value("${barDuration}")
     private Integer barDuration;
-
-    @Value("${saveBarsToCsv}")
-    private boolean saveToCsv;
 
     @Autowired
     private StrategyLogic strategyLogic;
@@ -116,7 +112,8 @@ public class SeriesService {
             file = "trades_start@s" + startSec + ".csv";
         } catch (NumberFormatException nfe) {
             file = StrategyLogic.TRADES_CSV;
-//            file = "trades_start@s1625679938.csv";
+            //  todo: get filename if initFromCsv = true
+//            file = "trades_start@s_30min.csv";
         }
         Path path = Paths.get(file);
         try(BufferedInputStream bis = new BufferedInputStream(Files.newInputStream(path, READ))) {
@@ -143,8 +140,9 @@ public class SeriesService {
 
     }
 
-    public List<List<String>> getIndicator(String indicatorName, String from, Path path) {
-        List<List<String>> indicatorValues = new ArrayList<>();
+    // TODO
+    public List<String> getIndicator(String indicatorName, String from, Path path) {
+        List<String> indicatorValues = new ArrayList<>();
 
         Integer emaCount = indicatorName.contains("long") ? emaBarCountLong : emaBarCountShort;
 
@@ -154,10 +152,9 @@ public class SeriesService {
 
         List<Bar> barData = series.getBarData();
         for(int i = 1; i < barData.size() ; i++) {
-            Bar b = barData.get(i);
-
-            Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
-            String beginTime = String.valueOf(micro.getEpochSecond());
+//            Bar b = barData.get(i);
+//            Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
+//            String beginTime = String.valueOf(micro.getEpochSecond());
 
             Num value = close.getValue(i);
                 try {
@@ -171,7 +168,8 @@ public class SeriesService {
             long micros = Math.round((val - truncated) * 1_000_000);
             String emaValue  = truncated + "." + micros;
 
-            indicatorValues.add(Arrays.asList(beginTime, emaValue));
+//            indicatorValues.add(Arrays.asList(/*beginTime,*/ emaValue));
+            indicatorValues.add(emaValue);
         }
         return indicatorValues;
     }
@@ -228,7 +226,7 @@ public class SeriesService {
                 double amount = Math.abs(Double.parseDouble(trade.get(1)));
                 double price = Math.abs(Double.parseDouble(trade.get(0)));
 
-                // TODO: filter trades
+                // TODO: filter trades (stdDev)
                 if (amount < 0.005 || price > 80_000 || price < 20_000) continue;
 
                 if (price > 0) {
@@ -257,6 +255,7 @@ public class SeriesService {
                             newBar.addPrice(previousBar.getClosePrice());
 
                             // may save trade quantities around main price levels, per bar.
+                            // could create range bars as well
                             try {
                                 series.addBar(newBar);
                             } catch (Exception e) {
@@ -270,13 +269,24 @@ public class SeriesService {
 //        logger.info("Series bar data: ");
 //        series.getBarData().forEach(b -> logger.info(b.toString()));
 
-        String fileName = "bnc_trades_" + barDuration + "s.csv";
+        String fileName = String.format(StrategyLogic.BARS_CSV, barDuration);
+        Path path = Paths.get(fileName);
+        if (Files.exists(path)){
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                logger.info("Could not delete {}.", fileName);
+            }
+        }
 
-        return series.getBarData().stream()
+        List<List<String>> trades = series.getBarData().stream()
                 .skip(skippedBars)  // first bar is x10 the duration.
                 .map(SeriesService::serializeBar)
-                .peek(b -> { if(saveToCsv) BarUtils.writeValuesToFile(fileName, b); } )
+                .peek(b -> BarUtils.writeValuesToFile(fileName, b) )
                 .collect(Collectors.toList());
+
+        trades.add(0, Collections.singletonList(StrategyLogic.START_SECONDS));
+        return trades;
     }
 
     private static ArrayList<String> serializeBar(Bar bar) {
@@ -346,8 +356,8 @@ public class SeriesService {
                 .map(Arrays::asList).collect(Collectors.toList());
     }
 
-    // todo: get latest bars from in memory series
-
-    // todo: agg bars from csv by timeframe
+    public String getLastTrade() {
+        return strategyLogic.getLatestPrice().toString();
+    }
 
 }

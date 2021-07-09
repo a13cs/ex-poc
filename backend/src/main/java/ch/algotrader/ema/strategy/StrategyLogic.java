@@ -40,13 +40,15 @@ public class StrategyLogic implements InitializingBean {
         mapper.configure(SerializationFeature.INDENT_OUTPUT, true);
     }
 
-    public static final String TRADES_CSV = "trades_start@s" + Instant.now().getEpochSecond() + ".csv";
+    public static final String START_SECONDS = Long.toString(Instant.now().getEpochSecond());
+    public static final String TRADES_CSV = "trades_start@s" + START_SECONDS + ".csv";
+    public static final String BARS_CSV = "bnc_trades_%ss" + START_SECONDS + ".csv";
 
     @Value("${barDuration}")
     private int barDuration;
 
-    @Value("${saveBarsToCsv}")
-    private boolean saveToCsv;
+//    @Value("${saveBarsToCsv}")
+//    private boolean saveToCsv;
 
     @Value("${offline}")
     private boolean offline;
@@ -62,6 +64,8 @@ public class StrategyLogic implements InitializingBean {
     private Strategy strategy;
 
     private final BarSeries series;
+
+    volatile Double latestPrice = 0.0;
 
     // todo: private
     EMAIndicator sema;
@@ -94,30 +98,16 @@ public class StrategyLogic implements InitializingBean {
                 double amount = Math.abs(Double.parseDouble(message.get("q")));
                 double price  = Math.abs(Double.parseDouble(message.get("p")));
 
-                // todo:
-                //  use getTradesSeries()
-                //  and/or save trades in memory to recreate bars
+                //  could save trades in memory to recreate bars
                 if (price > 0) {
                     series.addTrade(amount, price);
-
-                    // use trade timestamp 'T' instead, to avoid delayed trades
-                    // if T >= startTime + duration * barsCount -> new bar
-
-//                    long startTime = series.getFirstBar().getBeginTime().toEpochSecond();
-//                    long nextBarTime = startTime + (long) barDuration * series.getBarCount();
-//                    long currentTradeTime = (long) Double.parseDouble(message.get("T"));
-//                    logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
-//                    if (currentTradeTime >= nextBarTime) {
-//                        logger.info("currentTradeTime >= nextBarTime");
-//                        createNewBar();  // and save
-//                    }
+                    // todo
+                    setLatestPrice(price);
                 }
             }
         }
         // save trades to csv (p,q,T) then T
         writeToFile(TRADES_CSV, message);
-
-        // could create range bar as well
     }
 
 
@@ -261,6 +251,14 @@ public class StrategyLogic implements InitializingBean {
 
     public List<String[]> getSignals() {
         return signals;
+    }
+
+    Double getLatestPrice() {
+        return latestPrice;
+    }
+
+    void setLatestPrice(Double latestPrice) {
+        this.latestPrice = latestPrice;
     }
 
 

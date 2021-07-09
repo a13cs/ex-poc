@@ -56,10 +56,9 @@ public class BarUtils {
         }
     }
 
-    // TODO
     public static void writeValuesToFile(String fileName, List<String> fields) {
 //        fileName = fileName.split("\\.")[0] + "_" + Instant.now().getEpochSecond() + ".csv";
-
+        
         try (OutputStream out =
                      new BufferedOutputStream(Files.newOutputStream(Paths.get(fileName), CREATE, APPEND))) {
             String values = String.join(",", fields);
