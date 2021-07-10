@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -140,7 +141,6 @@ public class SeriesService {
 
     }
 
-    // TODO
     public List<String> getIndicator(String indicatorName, String from, Path path) {
         List<String> indicatorValues = new ArrayList<>();
 
@@ -156,7 +156,9 @@ public class SeriesService {
 //            Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
 //            String beginTime = String.valueOf(micro.getEpochSecond());
 
+            // TODO: constant close values
             Num value = close.getValue(i);
+
                 try {
                     value = ema.getValue(i);
                 } catch (Exception e) {
@@ -235,7 +237,7 @@ public class SeriesService {
 
                     if (index >= 0) {
                         long seriesBarCount = series.getBarCount() > 0 ? series.getBarCount() : 1;
-                        long nextBarTime = dateTime.plusSeconds((long) barDuration * seriesBarCount).toEpochSecond() * 1_000;
+                        long nextBarTime = dateTime.truncatedTo(ChronoUnit.MINUTES).plusSeconds((long) barDuration * seriesBarCount).toEpochSecond() * 1_000;
                         long currentTradeTime = (long) Double.parseDouble(trade.get(2));
 
                         logger.info("startTime {} nextBarTime {} currentTradeTime {}", startTime, nextBarTime, currentTradeTime);
@@ -245,7 +247,7 @@ public class SeriesService {
 //                        logger.info("startTime {} nextBarTime {} currentTradeTime {}", startDateTime, nextDateTime, currentDateTime);
 
                         if (currentTradeTime / 1_000 >= nextBarTime / 1_000) {
-                            logger.info("currentTradeTime >= nextBarTime  {} ms", currentTradeTime - nextBarTime);
+                            logger.info("currentTradeTime >= nextBarTime  {} ms ", currentTradeTime - nextBarTime); // x10 ?
 
                             ZonedDateTime barEndTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli((nextBarTime)), utc);
                             Bar newBar = new BaseBar(duration, barEndTime, series.function());
@@ -356,7 +358,7 @@ public class SeriesService {
                 .map(Arrays::asList).collect(Collectors.toList());
     }
 
-    public String getLastTrade() {
+    public String getLastTradePrice() {
         return strategyLogic.getLatestPrice().toString();
     }
 

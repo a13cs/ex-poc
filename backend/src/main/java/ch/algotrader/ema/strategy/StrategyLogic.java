@@ -65,7 +65,7 @@ public class StrategyLogic implements InitializingBean {
 
     private final BarSeries series;
 
-    volatile Double latestPrice = 0.0;
+    Double latestPrice = 0.0;
 
     // todo: private
     EMAIndicator sema;
@@ -93,23 +93,11 @@ public class StrategyLogic implements InitializingBean {
     }
 
     public void handleTradeEvent(Map<String, String> message) {
-        if (this.series.getEndIndex() >= 0) {
-            synchronized (series) {
-                double amount = Math.abs(Double.parseDouble(message.get("q")));
-                double price  = Math.abs(Double.parseDouble(message.get("p")));
+        setLatestPrice(Math.abs(Double.parseDouble(message.get("p"))));
 
-                //  could save trades in memory to recreate bars
-                if (price > 0) {
-                    series.addTrade(amount, price);
-                    // todo
-                    setLatestPrice(price);
-                }
-            }
-        }
         // save trades to csv (p,q,T) then T
         writeToFile(TRADES_CSV, message);
     }
-
 
 //    @Scheduled(cron = "*/" + "#{${barDuration}}" + " * * * * *")
     public void onTime() {

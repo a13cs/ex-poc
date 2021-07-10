@@ -9,17 +9,23 @@ import {HttpClient} from "@angular/common/http";
 })
 export class AppComponent implements OnInit {
 
+  proxyConf = true
+
   title = 'app';
   indicatorVisible = false
 
   smaLineSecond: any
   smaLineFirst: any
 
+  closeLine: any
+
   csvTimestamp: any
   data: any[] = []
   series: any = []
 
   balance = {};
+
+  lastBar: any;
 
   constructor(private http: HttpClient) {
   }
@@ -29,10 +35,10 @@ export class AppComponent implements OnInit {
     if(!show) {
       (<ISeriesApi<"Line">>this.smaLineSecond).setData([])
     } else {
-      this.http.get<any[]>('/indicator/' + emaLength + '/0/'+this.csvTimestamp).subscribe(
+      let prefix = this.proxyConf ? '/be' : ''
+      this.http.get<any[]>(prefix + '/indicator/' + emaLength + '/0/'+this.csvTimestamp).subscribe(
         d => {
           console.log(d)
-          // d = d.map(i => i[1] )
 
           let indicatorData: any[] = []
           for (let i = 1; i < this.data.length; i++) {
@@ -92,6 +98,20 @@ export class AppComponent implements OnInit {
     // todo: add volume
     // chart.addHistogramSeries()
 
+    // let volumeSeries = chart.addHistogramSeries({
+    //   color: '#26a69a',
+    //   priceFormat: {
+    //     type: 'volume',
+    //   },
+    //   priceScaleId: '',
+    //   scaleMargins: {
+    //     top: 0.8,
+    //     bottom: 0,
+    //   },
+    // });
+    // {time, value, color}
+
+
     const chartLine = createChart(document.body, {
       width: 600,
       height: 300,
@@ -125,7 +145,8 @@ export class AppComponent implements OnInit {
       },
     });
 
-    const closeLine = chartLine.addLineSeries({
+    // TODO: add trade quantity dots graph
+    this.closeLine = chartLine.addLineSeries({
       color: 'rgb(17,10,151)',
       lineWidth: 2,
     });
@@ -133,37 +154,11 @@ export class AppComponent implements OnInit {
     //  ===============================================================================
 
     // load data
+    let prefix = this.proxyConf ? '/be' : ''
 
-    // this.http.get<any[]>('assets/bars.json').subscribe(
-    // this.http.get<any[]>('/be/bars/0').subscribe(
-      this.http.get<any[]>('/bars/0').subscribe(
-      d => {
-        console.log(d)
-        let lineData: any[] = []
+    this.getData()
 
-        this.csvTimestamp = d.slice(0,1)[0];
-        console.log(this.csvTimestamp)
-        d.slice(1).forEach( point => {
-          if(+point[1]) {
-            this.data.push({
-                open: point[/*"openPrice"*/3] | 0,
-                high: point[/*"highPrice"*/5] | 0,
-                low: point[/*"lowPrice"*/6] | 0,
-                close: point[/*"closePrice"*/4] | 0,
-                time: +point[/*"endTime"*/1]
-              })
-            // let p : number = (Math.round(point[4] * 1000) / 1000)//.toFixed(2);
-            lineData.push({time: +point[1] as UTCTimestamp, value: point[4] | 0})
-          }
-        })
-        this.series.setData(this.data);
-
-        closeLine.setData(lineData)
-
-      })
-
-    // this.http.get<any[]>('/be/signals/0').subscribe( d => {
-    this.http.get<any[]>('/signals/0').subscribe( d => {
+    this.http.get<any[]>(prefix + '/signals/0').subscribe( d => {
       console.log(d)
 
       let signals: any[] = d.map(s => {
@@ -181,7 +176,7 @@ export class AppComponent implements OnInit {
 
 
 /*
-    // this.http.get<any[]>('/be/acc').subscribe(
+    // this.http.get<any[]>(prefix + '/acc').subscribe(
     this.http.get<any[]>('/acc').subscribe(
       d => {
         // let data : any = Object.keys(d)
@@ -191,24 +186,71 @@ export class AppComponent implements OnInit {
     )
 */
 
-    // get the last trade
-    // setInterval(() => this.http.get<any>('/be/lastTrade').subscribe(
-    setInterval(() => this.http.get<any>('/lastTrade').subscribe(
+    setInterval(() => this.http.get<any[]>(prefix + '/lastTrade').subscribe(
       d => {
-        console.log(d)
-        // TODO get last bar, add to h,l,c
-        // BarData {
-        //   time: Time;
-        //   open: number;
-        //   high: number;
-        //   low: number;
-        //   close: number;
-        // }
+        let price = d[0]
+        let barDuration = d[1]
+        // console.log("Price, Bar Duration: " + d)
 
-        // let bar : any = {};
-        // (<ISeriesApi<"Candlestick">>this.series).update(bar)
-      }), 1_000_0)
+        // let now = this.data[this.data.length-1].time + barDuration
+        let now = new Date().getTime() / 1000
 
+        // console.log(now)
+        // console.log(this.lastBar.time)
+
+        let endBarDiff = Math.round(now - this.lastBar.time );
+        console.log("EndBarDiff: " + endBarDiff);
+
+        // TODO: bar duration < 30 sec
+        if(endBarDiff > barDuration) {
+          this.getData()
+          this.lastBar = this.data.pop()
+          console.log(this.lastBar);
+
+          // todo: update() with new bar
+        }
+
+        (<ISeriesApi<"Candlestick">>this.series).update({
+            time: this.lastBar.time,
+            open: this.lastBar.open,
+            high: +price > this.lastBar.high ? +price : this.lastBar.high,
+            low: +price < this.lastBar.low ? +price : this.lastBar.low,
+            close: +price
+          })
+      }), 1_500)
+
+  }
+
+  getData() {
+    let prefix = this.proxyConf ? '/be' : ''
+
+    this.http.get<any[]>(prefix + '/bars/0').subscribe(
+      d => {
+        let lineData: any[] = []
+        // console.log("bars: " + JSON.stringify(d))
+
+        this.csvTimestamp = d.slice(0,1)[0];
+        console.log("csvTimestamp: " + this.csvTimestamp)
+
+        d.slice(1).forEach( point => {
+          if(+point[1]) {
+            this.data.push({
+              open: point[/*"openPrice"*/3] | 0,
+              high: point[/*"highPrice"*/5] | 0,
+              low: point[/*"lowPrice"*/6] | 0,
+              close: point[/*"closePrice"*/4] | 0,
+              time: +point[/*"endTime"*/1]
+            })
+            // let p : number = (Math.round(point[4] * 1000) / 1000)//.toFixed(2);
+            lineData.push({time: +point[1] as UTCTimestamp, value: point[4] | 0})
+          }
+        })
+        this.lastBar = this.data[this.data.length-1]
+        // console.log("lastBar: " + JSON.stringify(this.lastBar))
+
+        this.series.setData(this.data);
+        this.closeLine.setData(lineData)
+      })
   }
 
 }
