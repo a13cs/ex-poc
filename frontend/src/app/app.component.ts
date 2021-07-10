@@ -8,15 +8,14 @@ import {HttpClient} from "@angular/common/http";
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
+  proxyConf = false
 
-  proxyConf = true
 
   title = 'app';
   indicatorVisible = false
 
   smaLineSecond: any
   smaLineFirst: any
-
   closeLine: any
 
   csvTimestamp: any
@@ -26,6 +25,8 @@ export class AppComponent implements OnInit {
   balance = {};
 
   lastBar: any;
+  barDuration: number = 10;
+  prefix = this.proxyConf ? '/be' : ''
 
   constructor(private http: HttpClient) {
   }
@@ -35,8 +36,7 @@ export class AppComponent implements OnInit {
     if(!show) {
       (<ISeriesApi<"Line">>this.smaLineSecond).setData([])
     } else {
-      let prefix = this.proxyConf ? '/be' : ''
-      this.http.get<any[]>(prefix + '/indicator/' + emaLength + '/0/'+this.csvTimestamp).subscribe(
+      this.http.get<any[]>(this.prefix + '/indicator/' + emaLength + '/0/'+this.csvTimestamp).subscribe(
         d => {
           console.log(d)
 
@@ -55,6 +55,7 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.getBarDuration()
 
     // create charts
 
@@ -154,11 +155,10 @@ export class AppComponent implements OnInit {
     //  ===============================================================================
 
     // load data
-    let prefix = this.proxyConf ? '/be' : ''
 
     this.getData()
 
-    this.http.get<any[]>(prefix + '/signals/0').subscribe( d => {
+    this.http.get<any[]>(this.prefix + '/signals/0').subscribe( d => {
       console.log(d)
 
       let signals: any[] = d.map(s => {
@@ -186,45 +186,45 @@ export class AppComponent implements OnInit {
     )
 */
 
-    setInterval(() => this.http.get<any[]>(prefix + '/lastTrade').subscribe(
-      d => {
-        let price = d[0]
-        let barDuration = d[1]
-        // console.log("Price, Bar Duration: " + d)
 
-        // let now = this.data[this.data.length-1].time + barDuration
+    // TODO: wss
+    setInterval(() => this.http.get<any>(this.prefix + '/lastTrade').subscribe(
+      price => {
+        console.log("Price: " + price)
         let now = new Date().getTime() / 1000
 
         // console.log(now)
         // console.log(this.lastBar.time)
 
-        let endBarDiff = Math.round(now - this.lastBar.time );
+        let endBarDiff = Math.round(now - this.lastBar?.time );
         console.log("EndBarDiff: " + endBarDiff);
 
-        // TODO: bar duration < 30 sec
-        if(endBarDiff > barDuration) {
+        if(endBarDiff > this.barDuration) {
           this.getData()
-          this.lastBar = this.data.pop()
           console.log(this.lastBar);
 
+          return;
           // todo: update() with new bar
         }
 
-        (<ISeriesApi<"Candlestick">>this.series).update({
+        if (this.lastBar?.time) (<ISeriesApi<"Candlestick">>this.series).update({
             time: this.lastBar.time,
             open: this.lastBar.open,
             high: +price > this.lastBar.high ? +price : this.lastBar.high,
             low: +price < this.lastBar.low ? +price : this.lastBar.low,
             close: +price
           })
-      }), 1_500)
+      }), 1_000)
 
   }
 
-  getData() {
-    let prefix = this.proxyConf ? '/be' : ''
+  private getBarDuration() {
+    this.http.get<any>(this.prefix + "/barDuration").subscribe(
+      duration => this.barDuration = duration)
+  }
 
-    this.http.get<any[]>(prefix + '/bars/0').subscribe(
+  private getData() {
+    this.http.get<any[]>(this.prefix + '/bars/0').subscribe(
       d => {
         let lineData: any[] = []
         // console.log("bars: " + JSON.stringify(d))

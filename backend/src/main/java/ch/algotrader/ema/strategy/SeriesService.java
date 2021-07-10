@@ -18,6 +18,7 @@ import org.ta4j.core.BaseBarSeries;
 import org.ta4j.core.BaseBarSeriesBuilder;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.DoubleNum;
 import org.ta4j.core.num.Num;
 
 import java.io.*;
@@ -156,11 +157,13 @@ public class SeriesService {
 //            Instant micro = b.getEndTime().toInstant().truncatedTo(ChronoUnit.MICROS);
 //            String beginTime = String.valueOf(micro.getEpochSecond());
 
-            // TODO: constant close values
             Num value = close.getValue(i);
-
                 try {
                     value = ema.getValue(i);
+                    // todo
+                    if (close.getValue(i-1).isEqual(close.getValue(i))) {
+                        value = value.plus(DoubleNum.valueOf(1));
+                    }
                 } catch (Exception e) {
                     logger.debug("EMAIndicator error at index " + i, e);
                 }
@@ -187,6 +190,9 @@ public class SeriesService {
             Num value = close.getValue(i);
             try {
                 value = ema.getValue(i);
+                if (close.getValue(i-1).isEqual(close.getValue(i))) {
+                    value = value.plus(DoubleNum.valueOf(1));
+                }
             } catch (Exception e) {
                 logger.debug("EMAIndicator error at index " + i, e);
             }
@@ -223,13 +229,17 @@ public class SeriesService {
         startTime = dateTime.toEpochSecond()*1_000;
         logger.info("start startTime {}", startTime);
 
-        for (List<String> trade : csvTrades) {
+        final double d = 500;  // todo: use std_dev
+        double previousPrice = d;
+        for (int i = 0; i < csvTrades.size(); i++) {
             {
+                List<String> trade = csvTrades.get(i);
                 double amount = Math.abs(Double.parseDouble(trade.get(1)));
                 double price = Math.abs(Double.parseDouble(trade.get(0)));
 
                 // TODO: filter trades (stdDev)
-                if (amount < 0.005 || price > 80_000 || price < 20_000) continue;
+                if ((amount < 0.005 || price > previousPrice + d || price < previousPrice - d) && i >= 1) continue;
+                previousPrice = price;
 
                 if (price > 0) {
                     int index = series.getEndIndex();

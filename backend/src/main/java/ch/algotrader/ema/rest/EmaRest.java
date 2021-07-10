@@ -64,12 +64,14 @@ public class EmaRest {
         return seriesService.getIndicator(indicator, from, Paths.get(fileName));
     }
 
-    // TODO: send bar duration as well
     @RequestMapping(method = RequestMethod.GET, path = "/lastTrade")
-    public List<String> lastTrade() {
-        String lastTradePrice = seriesService.getLastTradePrice();
+    public String lastTrade() {
+        return seriesService.getLastTradePrice();
+    }
 
-        return Arrays.asList(lastTradePrice, Integer.toString(barDuration));
+    @RequestMapping(method = RequestMethod.GET, path = "/barDuration")
+    public String barDuration() {
+        return Integer.toString(barDuration);
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/indicator/{indicator}")
